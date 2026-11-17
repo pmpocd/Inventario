@@ -370,7 +370,7 @@
     </main>
 
     <!-- MODAL ESCÁNER DE CÁMARA (IPHONE / ANDROID / WEBCAM) -->
-    <div id="cameraModal" class="hidden fixed inset-0 bg-slate-900/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+   <div id="cameraModal" class="hidden fixed inset-0 bg-slate-900/85 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
         <div class="bg-white dark:bg-quidel-darkCard rounded-2xl shadow-2xl border border-slate-200 dark:border-quidel-darkBorder w-full max-w-md overflow-hidden flex flex-col">
             <div class="bg-quidel-navy text-white px-5 py-3 flex items-center justify-between border-b-2 border-quidel-burgundy">
                 <div class="flex items-center gap-2">
@@ -789,11 +789,11 @@
             };
 
             html5QrScanner.start(
-                { facingMode: "environment" },
-                config,
-                (decodedText) => {
-                    handleCameraDecodedText(decodedText);
-                },
+    { facingMode: "environment" },
+    { fps: 10, qrbox: { width: 250, height: 150 } },
+    (decodedText) => { handleCameraDecodedText(decodedText); },
+    (errorMessage) => {}
+);
                 () => {}
             ).catch(err => {
                 alert("No se pudo iniciar la cámara. Asegúrate de abrir la página mediante HTTPS y conceder permisos de cámara en Safari/Chrome.\nDetalle: " + err);
@@ -806,11 +806,9 @@
             if (!code) return;
 
             const now = Date.now();
-            if (code === lastScannedCode && (now - lastScannedTime) < 1500) {
-                return;
-            }
-            lastScannedCode = code;
-            lastScannedTime = now;
+if (code === lastScannedCode && (now - lastScannedTime) < 2000) return;
+lastScannedCode = code;
+lastScannedTime = now;
 
             const banner = document.getElementById('cameraLastScanBanner');
 
