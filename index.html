@@ -1,0 +1,2323 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuidelOrtho - FE Stock & Inventory System v6.8.2 Pro</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS (Excel Export) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- jsPDF & AutoTable (PDF Export) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <!-- HTML5-QRCode (Camera Barcode Scanner) -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        quidel: {
+                            burgundy: '#8B0032',
+                            burgundyHover: '#6d0027',
+                            navy: '#0A2540',
+                            navyLight: '#13395c',
+                            accent: '#D4AF37',
+                            lightBg: '#F8FAFC',
+                            darkBg: '#0F172A',
+                            darkCard: '#1E293B',
+                            darkBorder: '#334155'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .tooltip-container:hover .tooltip-content { display: block; }
+        .help-tab-btn.active {
+            background-color: #0A2540;
+            color: #ffffff;
+            border-color: #8B0032;
+        }
+        .dark .help-tab-btn.active {
+            background-color: #8B0032;
+            color: #ffffff;
+            border-color: #D4AF37;
+        }
+    </style>
+</head>
+<body class="bg-quidel-lightBg dark:bg-quidel-darkBg min-h-screen text-slate-800 dark:text-slate-200 flex flex-col font-sans transition-colors duration-200">
+
+    <!-- Header Corporativo QuidelOrtho -->
+    <header class="bg-quidel-navy text-white shadow-md border-b-4 border-quidel-burgundy">
+        <div class="max-w-[98%] mx-auto px-4 py-2.5 flex flex-col lg:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white px-3 py-1.5 rounded-lg shadow-sm flex items-center h-11">
+                    <img src="Logo/qo-logo-indigo.svg" alt="QuidelOrtho Logo" class="h-7 w-auto object-contain" onerror="this.style.display='none'">
+                </div>
+                <div>
+                    <h1 class="text-base font-bold tracking-wide flex items-center gap-2">
+                        <span id="txtRevInv">Revisión de inventario</span> <span class="text-[10px] bg-quidel-burgundy text-white px-2 py-0.5 rounded font-normal">v6.8.2 Pro</span>
+                    </h1>
+                    <p class="text-[11px] text-slate-300" id="txtSubTitle">Control de stock FE</p>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="flex flex-wrap items-center gap-3 bg-quidel-navyLight p-2 rounded-lg border border-slate-700 text-xs">
+                    <div>
+                        <label class="block text-[10px] uppercase text-slate-400 font-semibold" id="lblStockFE">Stock FE</label>
+                        <input type="text" id="headerStockFE" placeholder="Stock FE" class="bg-slate-800 text-white px-2 py-1 rounded border border-slate-600 focus:outline-none focus:border-quidel-accent w-24">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] uppercase text-slate-400 font-semibold" id="lblNombreFE">Nombre FE</label>
+                        <input type="text" id="headerNombreFE" placeholder="Nombre FE" class="bg-slate-800 text-white px-2 py-1 rounded border border-slate-600 focus:outline-none focus:border-quidel-accent w-28">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] uppercase text-slate-400 font-semibold" id="lblNombreFSS">Nombre FSS/FSM</label>
+                        <input type="text" id="headerNombreFSS" placeholder="Nombre FSS/FSM" class="bg-slate-800 text-white px-2 py-1 rounded border border-slate-600 focus:outline-none focus:border-quidel-accent w-28">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] uppercase text-slate-400 font-semibold" id="lblFecha">Fecha</label>
+                        <input type="date" id="headerFecha" class="bg-slate-800 text-white px-2 py-1 rounded border border-slate-600 focus:outline-none focus:border-quidel-accent">
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <!-- Toggle Modo Oscuro -->
+                    <button onclick="toggleDarkMode()" class="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-600 px-2.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow" title="Alternar Modo Oscuro / Claro">
+                        <i id="themeIcon" class="fa-solid fa-moon"></i>
+                    </button>
+
+                    <!-- Toggle Feedback Sonoro -->
+                    <button onclick="toggleSoundFeedback()" id="btnSoundToggle" class="bg-emerald-800 hover:bg-emerald-700 text-white border border-emerald-600 px-2.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow" title="Sonido de Escaneo">
+                        <i id="soundIcon" class="fa-solid fa-volume-high"></i>
+                    </button>
+
+                    <!-- Ayuda -->
+                    <button onclick="toggleHelpModal()" class="bg-quidel-burgundy hover:bg-quidel-burgundyHover text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow" title="Guía y Ayuda del Sistema">
+                        <i class="fa-solid fa-circle-question text-amber-300"></i> <span id="txtBtnHelp">Ayuda</span>
+                    </button>
+
+                    <!-- Selector Idioma -->
+                    <div class="bg-quidel-navyLight p-2 rounded-lg border border-slate-700 flex items-center gap-1.5 text-xs">
+                        <i class="fa-solid fa-globe text-quidel-accent"></i>
+                        <select id="langSelector" onchange="changeLanguage(this.value)" class="bg-slate-800 text-white px-2 py-1.5 rounded border border-slate-600 focus:outline-none focus:border-quidel-accent font-semibold cursor-pointer">
+                            <option value="es">Español</option>
+                            <option value="en">English</option>
+                            <option value="pt">Português</option>
+                            <option value="de">Deutsch</option>
+                            <option value="nl">Nederlands</option>
+                            <option value="it">Italiano</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-[98%] w-full mx-auto px-2 py-3 flex flex-col gap-3">
+        <!-- BARRA DE ACCIONES SUPERIORES -->
+        <div class="bg-white dark:bg-quidel-darkCard p-2.5 rounded-xl shadow-sm border border-slate-200 dark:border-quidel-darkBorder flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-2.5">
+            <!-- Subgrupo Izquierdo (Entrada y Configuración) -->
+            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs">
+                <label id="btnImpCSV" class="shrink-0 bg-quidel-burgundy hover:bg-quidel-burgundyHover text-white px-2.5 py-1.5 rounded-lg shadow text-xs font-medium cursor-pointer transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-file-arrow-up"></i> <span id="txtBtnImpCSV">Importar CSV / TXT</span>
+                    <input type="file" id="csvFileInput" accept=".csv,.txt" class="hidden" onchange="handleCSVImport(event)">
+                </label>
+
+                <label id="btnImpMsg" class="shrink-0 bg-slate-700 hover:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-500 text-white px-2.5 py-1.5 rounded-lg shadow text-xs font-medium cursor-pointer transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-folder-open"></i> <span id="txtBtnImpMsg">Importar .msg</span>
+                    <input type="file" id="msgFolderInput" accept=".msg" multiple class="hidden" onchange="handleMSGFilesImport(event)">
+                </label>
+
+                <div class="h-4 w-px bg-slate-300 dark:bg-slate-600 mx-0.5 hidden sm:block"></div>
+
+                <button onclick="selectAutoSyncDirectory()" id="btnAutoSyncFolder" class="shrink-0 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 px-2 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1" title="En PC sincroniza carpeta; en móvil descarga respaldo JSON">
+                    <i class="fa-solid fa-folder-gear text-emerald-600 dark:text-emerald-400"></i> <span id="syncFolderStatus">Auto-Sync</span>
+                </button>
+
+                <button onclick="downloadDatabase()" id="btnDLBdd" class="shrink-0 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-2 py-1.5 rounded-lg text-xs font-medium border border-slate-300 dark:border-slate-600 transition flex items-center gap-1">
+                    <i class="fa-solid fa-download text-slate-500 dark:text-slate-300"></i> <span id="txtBtnDlBdd">Bajar BDD</span>
+                </button>
+                
+                <label id="btnLoadBdd" class="shrink-0 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-2 py-1.5 rounded-lg text-xs font-medium border border-slate-300 dark:border-slate-600 cursor-pointer transition flex items-center gap-1">
+                    <i class="fa-solid fa-upload text-slate-500 dark:text-slate-300"></i> <span id="txtBtnLoadBdd">Cargar BDD</span>
+                    <input type="file" accept=".json" class="hidden" onchange="loadDatabaseFromFile(event)">
+                </label>
+
+                <!-- Selector de Columnas Visibles -->
+                <div class="relative inline-block text-left shrink-0">
+                    <button onclick="toggleColumnDropdown()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-2 py-1.5 rounded-lg text-xs font-medium border border-slate-300 dark:border-slate-600 transition flex items-center gap-1">
+                        <i class="fa-solid fa-columns text-slate-500 dark:text-slate-300"></i> <span id="txtColumns">Columnas</span> <i class="fa-solid fa-caret-down ml-0.5"></i>
+                    </button>
+                    <div id="columnDropdownMenu" class="hidden absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-slate-800 ring-1 ring-black ring-opacity-5 p-2 z-50 text-xs border dark:border-slate-700">
+                        <div class="font-bold text-slate-700 dark:text-slate-200 pb-1 mb-1 border-b border-slate-200 dark:border-slate-700" id="txtShowHide">Mostrar/Ocultar</div>
+                        <div id="columnCheckboxes" class="flex flex-col gap-1 max-h-48 overflow-y-auto"></div>
+                    </div>
+                </div>
+
+                <!-- Botón Modo Checklist Cierre -->
+                <button onclick="toggleChecklistModal()" class="shrink-0 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-900 dark:text-blue-200 border border-blue-300 dark:border-blue-700 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm">
+                    <i class="fa-solid fa-list-check text-blue-600 dark:text-blue-400"></i> <span id="txtChecklistBtn">Checklist</span>
+                </button>
+            </div>
+
+            <!-- Subgrupo Derecho (Utilidades, Reglas y Exportación) -->
+            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs">
+                <span id="autoSaveTimer" class="shrink-0 text-[11px] text-slate-600 dark:text-slate-300 font-mono bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded border border-slate-200 dark:border-slate-700 flex items-center gap-1">
+                    <i class="fa-solid fa-clock-rotate-left text-blue-600 dark:text-blue-400"></i> <span id="txtAutoSave">Auto</span>: <span id="timerSeconds" class="font-bold text-quidel-navy dark:text-quidel-accent">60</span>s
+                </span>
+
+                <button onclick="copySummaryToClipboard()" class="shrink-0 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-2 py-1.5 rounded-lg text-xs font-medium border border-slate-300 dark:border-slate-600 transition flex items-center gap-1" title="Copiar Resumen para Teams/Outlook">
+                    <i class="fa-solid fa-copy text-slate-500 dark:text-slate-300"></i> <span id="txtCopySummary">Copiar</span>
+                </button>
+
+                <button onclick="exportToExcel()" class="shrink-0 bg-emerald-700 hover:bg-emerald-800 text-white px-2.5 py-1.5 rounded-lg shadow text-xs font-medium transition flex items-center gap-1">
+                    <i class="fa-file-excel fa-solid"></i> Excel
+                </button>
+                <button onclick="exportToPDF()" class="shrink-0 bg-rose-700 hover:bg-rose-800 text-white px-2.5 py-1.5 rounded-lg shadow text-xs font-medium transition flex items-center gap-1">
+                    <i class="fa-file-pdf fa-solid"></i> PDF
+                </button>
+
+                <div class="h-4 w-px bg-slate-300 dark:bg-slate-600 mx-0.5 hidden sm:block"></div>
+
+                <!-- BOTÓN IGUALAR POR PRECIO PROTEGIDO -->
+                <button onclick="toggleRuleModal()" id="btnAutoMatchRule" class="shrink-0 bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1.5 rounded-lg shadow text-xs font-bold transition flex items-center gap-1" title="Igualar Qty Real = Qty On Hand por debajo de un coste en dólares">
+                    <i class="fa-solid fa-shield-halved"></i> <span id="txtAutoMatchRule">Igualar (&lt; $X)</span>
+                </button>
+
+                <button onclick="confirmResetAllData()" id="btnResetInv" class="shrink-0 bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1.5 rounded-lg shadow text-xs font-bold transition flex items-center gap-1">
+                    <i class="fa-solid fa-trash-can"></i> <span id="txtResetInv">Reiniciar</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- BÚSQUEDA + CÁMARA MÓVIL + ESCANEO BATCH + UBICACIÓN PERSISTENTE & FAVORITOS -->
+        <div class="bg-white dark:bg-quidel-darkCard p-2.5 rounded-xl shadow-sm border border-slate-200 dark:border-quidel-darkBorder flex flex-wrap items-center gap-2 sm:gap-3">
+            <div class="flex-grow flex flex-wrap items-center gap-2">
+                <div class="relative flex-grow min-w-[200px]">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                    <input type="text" id="superSearch" onkeydown="handleSearchKey(event)" oninput="filterTable()" placeholder="Buscar Ref / Item, Descripción o Ubicación..." title="Doble clic para limpiar" class="w-full pl-9 pr-4 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-100 rounded-lg text-xs focus:outline-none focus:border-quidel-burgundy">
+                </div>
+
+                <!-- Botón Cámara Directa (iPhone / Android / Webcam) -->
+                <button onclick="openCameraScanner('search')" class="bg-quidel-navy hover:bg-quidel-navyLight text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow flex-shrink-0" title="Escanear código de barras con la cámara">
+                    <i class="fa-solid fa-camera text-amber-400"></i> <span class="hidden sm:inline">Cámara</span>
+                </button>
+
+                <button onclick="toggleBatchModal()" id="btnBatchScan" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow flex-shrink-0">
+                    <i class="fa-solid fa-barcode"></i> <span id="txtBatchScan">Escaneo Batch</span>
+                </button>
+
+                <div class="relative w-44 sm:w-56 flex-shrink-0 flex items-center">
+                    <i class="fa-solid fa-location-dot absolute left-2.5 top-2.5 text-amber-600 text-xs z-10"></i>
+                    <input type="text" id="persistentUbicacion" placeholder="Ubicación" class="w-full pl-7 pr-8 py-1.5 bg-amber-50/80 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 rounded-lg text-xs font-bold text-amber-900 dark:text-amber-200 focus:outline-none focus:border-amber-600 uppercase">
+                    
+                    <div class="relative">
+                        <button onclick="toggleFavDropdown()" class="absolute right-1 top-[-12px] text-amber-700 dark:text-amber-400 hover:text-amber-900 px-1 py-0.5 text-xs" title="Ubicaciones Favoritas (hasta 15)">
+                            <i class="fa-solid fa-star text-amber-500"></i>
+                        </button>
+                        <div id="favLocationsMenu" class="hidden absolute right-0 mt-4 w-52 rounded-md shadow-lg bg-white dark:bg-slate-800 ring-1 ring-black ring-opacity-5 p-2 z-50 text-xs border dark:border-slate-700">
+                            <div class="font-bold text-slate-700 dark:text-slate-200 pb-1 mb-1 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                                <span id="txtFavTitle">Favoritos (Máx 15)</span>
+                                <button onclick="addCurrentUbicToFavs()" id="txtBtnSaveFav" class="text-[10px] text-emerald-600 dark:text-emerald-400 hover:underline">+ Guardar</button>
+                            </div>
+                            <div id="favLocationsList" class="flex flex-col gap-1 max-h-48 overflow-y-auto"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative w-20 sm:w-24 flex-shrink-0">
+                    <input type="number" id="quickQtyReal" placeholder="Qty Real" onkeydown="handleSearchKey(event)" min="0" class="w-full px-2 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-100 rounded-lg text-xs font-bold text-center focus:outline-none focus:border-quidel-burgundy">
+                </div>
+
+                <button onclick="applyQuickAssignment()" id="btnAssignQuick" class="bg-quidel-burgundy hover:bg-quidel-burgundyHover text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow">
+                    <i class="fa-solid fa-check"></i> <span id="txtAssign">Asignar</span>
+                </button>
+
+                <span id="assignFeedback" class="hidden text-xs font-bold px-2 py-1 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 transition-opacity duration-300">
+                    <i class="fa-solid fa-circle-check"></i> <span id="txtAssigned">Asignado</span>
+                </span>
+            </div>
+
+            <button onclick="resetFilters()" id="btnClearFilters" class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition flex-shrink-0">
+                <i class="fa-solid fa-rotate-right mr-1"></i> <span id="txtClearFilters">Limpiar Filtros</span>
+            </button>
+        </div>
+
+        <!-- RESUMEN DE DESVIACIÓN DE INVENTARIO Y FILTROS RÁPIDOS 1-CLIC -->
+        <div class="bg-gradient-to-r from-slate-900 to-quidel-navy text-white p-3 rounded-xl shadow-md border border-slate-800">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-2 pb-1.5 border-b border-slate-700">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-quidel-accent flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line"></i> <span id="txtSummaryTitleText">Resumen de Desviación de Inventario (Real vs. Previsto)</span>
+                </h3>
+
+                <div class="flex flex-wrap items-center gap-1.5 text-[11px]">
+                    <button onclick="filterByStatus('ok')" class="bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-600/50 px-2 py-0.5 rounded flex items-center gap-1 transition">
+                        <i class="fa-solid fa-circle-check text-emerald-400"></i> <span id="txtFilterOk">Coincidentes</span>: <span id="cntStatusOk" class="font-bold">0</span>
+                    </button>
+                    <button onclick="filterByStatus('diff')" class="bg-rose-900/60 hover:bg-rose-800 text-rose-200 border border-rose-600/50 px-2 py-0.5 rounded flex items-center gap-1 transition">
+                        <i class="fa-solid fa-circle-xmark text-rose-400"></i> <span id="txtFilterDiff">Descuadres</span>: <span id="cntStatusDiff" class="font-bold">0</span>
+                    </button>
+                    <button onclick="filterByStatus('pending')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 px-2 py-0.5 rounded flex items-center gap-1 transition">
+                        <i class="fa-solid fa-clock text-amber-400"></i> <span id="txtFilterPending">Pendientes</span>: <span id="cntStatusPending" class="font-bold">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 text-center">
+                <div class="bg-slate-800/80 p-2 rounded-lg border border-slate-700">
+                    <span class="block text-[10px] uppercase text-slate-400 font-semibold" id="lblKpiOnHand">Qty On Hand</span>
+                    <span id="kpiQtyOnHand" class="text-base font-bold text-white">0</span>
+                </div>
+                <div class="bg-slate-800/80 p-2 rounded-lg border border-slate-700">
+                    <span class="block text-[10px] uppercase text-slate-400 font-semibold" id="lblKpiQtyReal">Qty Real (Conteo)</span>
+                    <span id="kpiQtyReal" class="text-base font-bold text-amber-400">0</span>
+                </div>
+                <div class="bg-slate-800/80 p-2 rounded-lg border border-slate-700">
+                    <span class="block text-[10px] uppercase text-slate-400 font-semibold" id="lblKpiAjuste">Ajuste Unidades</span>
+                    <span id="kpiAjusteQty" class="text-base font-bold text-rose-400">0</span>
+                </div>
+                <div class="bg-slate-800/80 p-2 rounded-lg border border-slate-700">
+                    <span class="block text-[10px] uppercase text-slate-400 font-semibold" id="lblKpiAccuracy">Precisión Stock (%)</span>
+                    <span id="kpiAccuracy" class="text-base font-bold text-emerald-400">0%</span>
+                </div>
+                <div class="bg-slate-800/80 p-2 rounded-lg border border-slate-700">
+                    <span class="block text-[10px] uppercase text-slate-400 font-semibold" id="lblKpiTotalCost">Total Cost On Hand</span>
+                    <span id="kpiTotalCost" class="text-base font-bold text-white">$0.00</span>
+                </div>
+                <div class="bg-slate-800/80 p-2 rounded-lg border border-slate-700">
+                    <span class="block text-[10px] uppercase text-slate-400 font-semibold" id="lblKpiCostAjuste">Coste Desviado / Total</span>
+                    <span id="kpiCostAjuste" class="text-base font-bold text-rose-400">$0.00 (0%)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLA PRINCIPAL DE INVENTARIO -->
+        <div class="bg-white dark:bg-quidel-darkCard rounded-xl shadow-sm border border-slate-200 dark:border-quidel-darkBorder overflow-hidden flex flex-col">
+            <div class="overflow-x-auto max-h-[62vh]">
+                <table id="inventoryTable" class="w-full text-left border-collapse text-xs whitespace-nowrap">
+                    <thead class="bg-quidel-navy text-white sticky top-0 z-10">
+                        <tr>
+                            <th class="p-2 text-center w-8">St</th>
+                            <th data-col-idx="0" onclick="sortTable('whs')" class="p-2 cursor-pointer hover:bg-quidel-navyLight">WHS <i class="fa-solid fa-sort ml-1"></i></th>
+                            <th data-col-idx="1" onclick="sortTable('grp')" class="p-2 cursor-pointer hover:bg-quidel-navyLight"><span id="thGrp">Grp</span> <i class="fa-solid fa-sort ml-1"></i></th>
+                            <th data-col-idx="2" onclick="sortTable('item')" class="p-2 cursor-pointer hover:bg-quidel-navyLight"><span id="thItem">Item</span> <i class="fa-solid fa-sort ml-1"></i></th>
+                            <th data-col-idx="3" onclick="sortTable('description')" class="p-2 cursor-pointer hover:bg-quidel-navyLight"><span id="thDesc">Description</span> <i class="fa-solid fa-sort ml-1"></i></th>
+                            <th data-col-idx="4" onclick="sortTable('ubicacion')" class="p-2 bg-amber-700 text-white cursor-pointer hover:bg-amber-800"><span id="thUbicacion">Ubicación</span> <i class="fa-solid fa-sort ml-1"></i></th>
+                            <th data-col-idx="5" onclick="sortTable('qtyOnHand')" class="p-2 cursor-pointer hover:bg-quidel-navyLight text-center"><span id="thOnHand">Qty On Hand</span> <i class="fa-solid fa-sort ml-1"></i></th>
+                            <th data-col-idx="6" class="p-2 bg-quidel-burgundy text-white text-center" id="thQtyReal">Qty Real</th>
+                            <th data-col-idx="7" class="p-2 bg-quidel-burgundy text-white text-center" id="thAjuste">Ajuste</th>
+                            <th data-col-idx="8" onclick="sortTable('qtyAlloc')" class="p-2 cursor-pointer hover:bg-quidel-navyLight text-center"><span id="thAlloc">Qty Alloc.</span> <i class="fa-solid fa-sort ml-1"></i></th>
+                            <th data-col-idx="9" onclick="sortTable('qtyOnPO')" class="p-2 cursor-pointer hover:bg-quidel-navyLight text-center"><span id="thOnPO">Qty On PO</span> <i class="fa-solid fa-sort ml-1"></i></th>
+                            <th data-col-idx="10" onclick="sortTable('costUnit')" class="p-2 cursor-pointer hover:bg-quidel-navyLight text-right"><span id="thCostUnit">Cost/Unit ($)</span> <i class="fa-solid fa-sort ml-1"></i></th>
+                            <th data-col-idx="11" onclick="sortTable('totalCost')" class="p-2 cursor-pointer hover:bg-quidel-navyLight text-right"><span id="thTotalCost">Total Cost ($)</span> <i class="fa-solid fa-sort ml-1"></i></th>
+                            <th data-col-idx="12" class="p-2" id="thObs">Observaciones</th>
+                            <th data-col-idx="13" onclick="sortTable('lastShipment')" class="p-2 cursor-pointer hover:bg-quidel-navyLight text-center"><span id="thLastShip">Last Shipment</span> <i class="fa-solid fa-sort ml-1"></i></th>
+                            <th data-col-idx="14" class="p-2 text-center" id="thOrigin">Origen Conteo</th>
+                            <th data-col-idx="15" class="p-2 text-center" id="thDateTime">Fecha y Hora</th>
+                        </tr>
+                        <tr class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                            <th class="p-1"></th>
+                            <th data-col-idx="0" class="p-1"><input type="text" data-col="whs" oninput="filterTable()" placeholder="Filtrar WHS" class="w-full px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-[11px]"></th>
+                            <th data-col-idx="1" class="p-1"><input type="text" data-col="grp" oninput="filterTable()" placeholder="Filtrar Grp" class="w-full px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-[11px]"></th>
+                            <th data-col-idx="2" class="p-1"><input type="text" data-col="item" oninput="filterTable()" placeholder="Filtrar Item" class="w-full px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-[11px]"></th>
+                            <th data-col-idx="3" class="p-1"><input type="text" data-col="description" oninput="filterTable()" placeholder="Filtrar Desc" class="w-full px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-[11px]"></th>
+                            <th data-col-idx="4" class="p-1"><input type="text" data-col="ubicacion" oninput="filterTable()" placeholder="Filtrar Ubic" class="w-full px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-[11px]"></th>
+                            <th data-col-idx="5" class="p-1"><input type="text" data-col="qtyOnHand" oninput="filterTable()" placeholder="Filtrar OnHand" class="w-full px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-[11px]"></th>
+                            <th data-col-idx="6" class="p-1">
+                                <select id="filterAjusteSelect" onchange="filterTable()" class="w-full px-1 py-0.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-[11px] font-semibold text-quidel-navy dark:text-quidel-accent cursor-pointer">
+                                    <option value="" id="optFilterAll">Todos</option>
+                                    <option value="nonzero" id="optFilterNonZero">Con Desviación (!= 0)</option>
+                                    <option value="zero" id="optFilterZero">Sin Desviación (0)</option>
+                                    <option value="positive" id="optFilterPos">Positivos (> 0)</option>
+                                    <option value="negative" id="optFilterNeg">Negativos (< 0)</option>
+                                </select>
+                            </th>
+                            <th data-col-idx="7" class="p-1"></th>
+                            <th data-col-idx="8" class="p-1"><input type="text" data-col="qtyAlloc" oninput="filterTable()" placeholder="Filtrar Alloc" class="w-full px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-[11px]"></th>
+                            <th data-col-idx="9" class="p-1"><input type="text" data-col="qtyOnPO" oninput="filterTable()" placeholder="Filtrar PO" class="w-full px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-[11px]"></th>
+                            <th data-col-idx="10" class="p-1"><input type="text" data-col="costUnit" oninput="filterTable()" placeholder="Filtrar Cost" class="w-full px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-[11px]"></th>
+                            <th data-col-idx="11" class="p-1"><input type="text" data-col="totalCost" oninput="filterTable()" placeholder="Filtrar Total" class="w-full px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-[11px]"></th>
+                            <th data-col-idx="12" class="p-1"><input type="text" data-col="observaciones" oninput="filterTable()" placeholder="Filtrar Obs" class="w-full px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-[11px]"></th>
+                            <th data-col-idx="13" class="p-1"><input type="text" data-col="lastShipment" oninput="filterTable()" placeholder="Filtrar Ship" class="w-full px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-[11px]"></th>
+                            <th data-col-idx="14" class="p-1"><input type="text" data-col="origen" oninput="filterTable()" placeholder="Filtrar Origen" class="w-full px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-[11px]"></th>
+                            <th data-col-idx="15" class="p-1"><input type="text" data-col="fechaHora" oninput="filterTable()" placeholder="Filtrar Fecha" class="w-full px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-[11px]"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTableBody" class="divide-y divide-slate-200 dark:divide-slate-700">
+                        <tr>
+                            <td colspan="17" class="text-center py-8 text-slate-400 dark:text-slate-500" id="txtEmptyTable">
+                                <i class="fa-solid fa-file-csv text-3xl mb-2 block"></i>
+                                Importa un fichero CSV/TXT o carga una BDD (.json) para comenzar.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="bg-slate-50 dark:bg-slate-800 px-4 py-2 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
+                <span id="recordCount">Total registros: 0</span>
+                <span>Pablo Méndez QO 2026</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL ESCÁNER DE CÁMARA (IPHONE / ANDROID / WEBCAM) -->
+    <div id="cameraModal" class="hidden fixed inset-0 bg-slate-900/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-quidel-darkCard rounded-2xl shadow-2xl border border-slate-200 dark:border-quidel-darkBorder w-full max-w-md overflow-hidden flex flex-col">
+            <div class="bg-quidel-navy text-white px-5 py-3 flex items-center justify-between border-b-2 border-quidel-burgundy">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-camera text-amber-400"></i>
+                    <h3 class="font-bold text-sm tracking-wide" id="camModalTitle">Escáner con Cámara</h3>
+                </div>
+                <button onclick="closeCameraScanner()" class="text-slate-300 hover:text-white transition text-xl"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-4 flex flex-col items-center gap-3">
+                <div id="cameraReader" class="w-full rounded-xl overflow-hidden border-2 border-quidel-burgundy bg-black min-h-[250px]"></div>
+                <div id="cameraLastScanBanner" class="hidden w-full p-2.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-400 text-emerald-900 dark:text-emerald-200 text-xs font-bold text-center"></div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 text-center">Apunta el código de barras o QR dentro del recuadro.</p>
+            </div>
+            <div class="bg-slate-100 dark:bg-slate-800 px-5 py-3 border-t border-slate-200 dark:border-slate-700 flex justify-end">
+                <button onclick="closeCameraScanner()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-1.5 rounded-lg text-xs font-bold shadow">Cerrar Cámara</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL AYUDA DETALLADO -->
+    <div id="helpModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-3">
+        <div class="bg-white dark:bg-quidel-darkCard rounded-2xl shadow-2xl border border-slate-200 dark:border-quidel-darkBorder w-full max-w-5xl overflow-hidden flex flex-col h-[92vh]">
+            <div class="bg-quidel-navy text-white px-6 py-4 flex items-center justify-between border-b-4 border-quidel-burgundy flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="bg-quidel-burgundy text-white p-2 rounded-lg shadow">
+                        <i class="fa-solid fa-book-open text-base"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base tracking-wide">Manual Operativo Avanzado QuidelOrtho</h3>
+                        <p class="text-[11px] text-slate-300">Guía de usuario interactiva y sincronización multi-dispositivo</p>
+                    </div>
+                </div>
+                <button onclick="toggleHelpModal()" class="text-slate-300 hover:text-white transition text-2xl"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-2 flex flex-wrap gap-2 flex-shrink-0">
+                <button onclick="switchHelpTab('tab1')" id="helpTabBtn1" class="help-tab-btn active px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-xs font-bold transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-rocket text-amber-500"></i> <span>1. Inicio Rápido</span>
+                </button>
+                <button onclick="switchHelpTab('tab2')" id="helpTabBtn2" class="help-tab-btn px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-mobile-screen text-emerald-600 dark:text-emerald-400"></i> <span>2. iPhone & Backups</span>
+                </button>
+                <button onclick="switchHelpTab('tab3')" id="helpTabBtn3" class="help-tab-btn px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-barcode text-amber-600 dark:text-amber-400"></i> <span>3. Escaneo & Cámara</span>
+                </button>
+                <button onclick="switchHelpTab('tab4')" id="helpTabBtn4" class="help-tab-btn px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-chart-pie text-blue-600 dark:text-blue-400"></i> <span>4. KPIs & Métricas</span>
+                </button>
+                <button onclick="switchHelpTab('tab5')" id="helpTabBtn5" class="help-tab-btn px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-file-export text-rose-600 dark:text-rose-400"></i> <span>5. Cierre & Informes</span>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto flex-grow flex flex-col gap-6 text-xs text-slate-700 dark:text-slate-300">
+                <div id="helpTab1" class="flex flex-col gap-4">
+                    <div class="bg-gradient-to-r from-slate-900 to-quidel-navy text-white p-4 rounded-xl shadow-md border border-slate-800">
+                        <h4 class="font-bold text-sm text-quidel-accent mb-1">Flujo de Trabajo Automatizado</h4>
+                        <p class="text-slate-300 leading-relaxed text-xs">Este sistema automatiza la conciliación de stock de Field Engineers (FE), reduciendo descuadres operativos y acelerando la auditoría periódica de piezas y consumibles.</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-center">
+                        <div class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-300 dark:border-slate-700 shadow-sm flex flex-col items-center">
+                            <div class="w-8 h-8 rounded-full bg-quidel-burgundy text-white flex items-center justify-center font-bold mb-2">1</div>
+                            <span class="font-bold text-quidel-navy dark:text-quidel-accent text-xs mb-1">Carga CSV / JSON</span>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400">Importación del reporte original o BDD sincronizada.</p>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-300 dark:border-slate-700 shadow-sm flex flex-col items-center">
+                            <div class="w-8 h-8 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold mb-2">2</div>
+                            <span class="font-bold text-quidel-navy dark:text-quidel-accent text-xs mb-1">Auditoría / Cámara</span>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400">Lectura con pistola USB o cámara del iPhone en lote.</p>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-300 dark:border-slate-700 shadow-sm flex flex-col items-center">
+                            <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold mb-2">3</div>
+                            <span class="font-bold text-quidel-navy dark:text-quidel-accent text-xs mb-1">Control Financiero</span>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400">Cálculo de desviaciones monetarias ($) y precisión (%).</p>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-300 dark:border-slate-700 shadow-sm flex flex-col items-center">
+                            <div class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold mb-2">4</div>
+                            <span class="font-bold text-quidel-navy dark:text-quidel-accent text-xs mb-1">Cierre & Firma</span>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400">Checklist, descarga de backup JSON y exportación PDF/Excel.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="helpTab2" class="hidden flex flex-col gap-4">
+                    <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-3">
+                        <h4 class="font-bold text-sm text-emerald-700 dark:text-emerald-400">Gestión de Backups y Paso entre PC y iPhone</h4>
+                        <p class="leading-relaxed">Los datos se autoguardan cada 60 segundos en la memoria local del navegador (<code>localStorage</code>) de cada dispositivo. Para transferir el trabajo entre tu PC y tu iPhone:</p>
+                        <ul class="list-disc pl-5 space-y-1">
+                            <li><strong>En PC:</strong> Importa el CSV, pulsa <strong>Bajar BDD</strong> y envíate el archivo <code>.json</code> por Teams/OneDrive/Correo.</li>
+                            <li><strong>En iPhone:</strong> Abre la app desde Safari, pulsa <strong>Cargar BDD</strong>, selecciona el <code>.json</code> y escanea con la cámara. Al terminar, pulsa <strong>Bajar BDD</strong> o <strong>Auto-Sync</strong> para guardar el respaldo actualizado en Archivos / OneDrive / iCloud.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="helpTab3" class="hidden flex flex-col gap-4">
+                    <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-3">
+                        <h4 class="font-bold text-sm text-amber-700 dark:text-amber-400">Escaneo con Cámara y Pistola Lectora</h4>
+                        <p class="leading-relaxed">Puedes usar tanto el botón <strong>Cámara</strong> junto al buscador principal como el botón <strong>Cámara Lote</strong> dentro de <em>Escaneo Batch</em> para leer códigos de barras y QR continuamente desde la cámara trasera de tu iPhone.</p>
+                    </div>
+                </div>
+
+                <div id="helpTab4" class="hidden flex flex-col gap-4">
+                    <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-3">
+                        <h4 class="font-bold text-sm text-blue-900 dark:text-blue-300">Panel Financiero de Desviación</h4>
+                        <p class="leading-relaxed">Calcula automáticamente el impacto financiero total incluyendo tanto las desviaciones contadas como el coste de las piezas aún pendientes de contar.</p>
+                    </div>
+                </div>
+
+                <div id="helpTab5" class="hidden flex flex-col gap-4">
+                    <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-3">
+                        <h4 class="font-bold text-sm text-rose-800 dark:text-rose-300">Formatos de Exportación Corporativa</h4>
+                        <p class="leading-relaxed">Generación de informes ejecutivos en Excel (.xlsx) y PDF (.pdf) con resumen de desviación y cuadro de firmas de revisión.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-100 dark:bg-slate-800 px-6 py-3.5 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center flex-shrink-0">
+                <span class="text-[11px] text-slate-500 dark:text-slate-400">QuidelOrtho Inventory Assistant &copy; 2026</span>
+                <button onclick="toggleHelpModal()" class="bg-quidel-navy hover:bg-quidel-navyLight text-white px-5 py-2 rounded-xl text-xs font-bold transition shadow">Cerrar Manual</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE AUDITORÍA DE REFERENCIA -->
+    <div id="auditModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-quidel-darkCard rounded-2xl shadow-2xl border border-slate-200 dark:border-quidel-darkBorder w-full max-w-lg overflow-hidden flex flex-col">
+            <div class="bg-quidel-navy text-white px-5 py-3 flex items-center justify-between border-b-2 border-quidel-burgundy">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-amber-400"></i>
+                    <h3 class="font-bold text-sm tracking-wide">Historial de Cambios</h3>
+                </div>
+                <button onclick="toggleAuditModal()" class="text-slate-300 hover:text-white transition text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-4 overflow-y-auto max-h-80">
+                <p id="auditItemInfo" class="text-xs font-bold text-quidel-navy dark:text-quidel-accent mb-3 pb-2 border-b border-slate-200 dark:border-slate-700"></p>
+                <div id="auditTimeline" class="flex flex-col gap-2.5 text-xs"></div>
+            </div>
+            <div class="bg-slate-100 dark:bg-slate-800 px-5 py-2.5 border-t border-slate-200 dark:border-slate-700 flex justify-end">
+                <button onclick="toggleAuditModal()" class="bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 px-4 py-1 rounded text-xs font-bold">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE ESCANEO BATCH (CON CÁMARA INTEGRADA) -->
+    <div id="batchModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-quidel-darkCard rounded-2xl shadow-2xl border border-slate-200 dark:border-quidel-darkBorder w-full max-w-3xl overflow-hidden flex flex-col max-h-[88vh]">
+            <div class="bg-quidel-navy text-white px-5 py-3 flex items-center justify-between border-b-2 border-quidel-burgundy">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-bolt text-amber-400 text-base"></i>
+                    <h3 class="font-bold text-sm tracking-wide">Modo Escaneo en Batch (Cámara / Pistola USB)</h3>
+                </div>
+                <button onclick="toggleBatchModal()" class="text-slate-300 hover:text-white transition text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="p-4 sm:p-5 flex flex-col gap-4 overflow-y-auto">
+                <div class="flex flex-wrap items-center justify-between gap-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 p-2.5 rounded-lg">
+                    <p class="text-xs text-slate-700 dark:text-slate-300">
+                        <i class="fa-solid fa-circle-info text-amber-600 dark:text-amber-400 mr-1"></i> Dispara la pistola o usa la cámara del móvil para sumar lecturas al lote.
+                    </p>
+                    <button onclick="openCameraScanner('batch')" class="bg-quidel-navy hover:bg-quidel-navyLight text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow">
+                        <i class="fa-solid fa-camera text-amber-400"></i> Cámara Lote
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1">Campo de lectura continua:</label>
+                        <input type="text" id="batchBarcodeInput" onkeydown="handleBatchScanKey(event)" placeholder="Dispara la pistola o escribe código..." autofocus class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-800 border-2 border-quidel-burgundy rounded-lg text-sm font-bold text-quidel-navy dark:text-slate-100 focus:outline-none focus:bg-white dark:focus:bg-slate-900 shadow-inner">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-amber-900 dark:text-amber-300 mb-1">Ubicación para este Lote:</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-location-dot absolute left-2.5 top-2.5 text-amber-600 dark:text-amber-400 text-xs"></i>
+                            <input type="text" id="batchGlobalUbic" oninput="applyGlobalUbicToBatch(this.value)" placeholder="Ej: EST-A1" class="w-full pl-7 pr-2 py-2 bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700 rounded-lg text-xs font-bold text-amber-900 dark:text-amber-200 uppercase focus:outline-none focus:border-amber-600">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-grow flex flex-col border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+                    <div class="bg-slate-100 dark:bg-slate-800 px-3 py-2 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center text-xs font-bold text-slate-700 dark:text-slate-200">
+                        <span>Lote de Lectura Actual</span>
+                        <span id="batchTotalCount" class="bg-quidel-burgundy text-white px-2 py-0.5 rounded-full text-[10px]">0 ítems</span>
+                    </div>
+                    <div class="max-h-60 overflow-y-auto overflow-x-auto p-2 bg-slate-50 dark:bg-slate-900">
+                        <table class="w-full text-xs text-left whitespace-nowrap">
+                            <thead>
+                                <tr class="text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 font-semibold">
+                                    <th class="p-1.5 text-center w-8">St</th>
+                                    <th class="p-1.5">Código / Item</th>
+                                    <th class="p-1.5 text-center">Qty On Hand</th>
+                                    <th class="p-1.5 text-center bg-slate-200/60 dark:bg-slate-800 text-slate-800 dark:text-slate-200">Qty Real (Prev.)</th>
+                                    <th class="p-1.5 text-center">Lecturas Batch</th>
+                                    <th class="p-1.5 text-center">Ubicación Item</th>
+                                    <th class="p-1.5 text-right">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="batchTableBody" class="divide-y divide-slate-200 dark:divide-slate-700">
+                                <tr>
+                                    <td colspan="7" class="text-center py-6 text-slate-400 italic">No hay ítems escaneados en este lote</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-100 dark:bg-slate-800 px-5 py-3 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                <button onclick="clearBatchList()" class="text-rose-600 dark:text-rose-400 hover:underline text-xs font-bold flex items-center gap-1">
+                    <i class="fa-solid fa-trash-can"></i> <span>Vaciar Lote</span>
+                </button>
+                <div class="flex gap-2">
+                    <button onclick="toggleBatchModal()" class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition">Cancelar</button>
+                    <button onclick="applyBatchItems()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition shadow flex items-center gap-1.5">
+                        <i class="fa-solid fa-check"></i> <span>Procesar Lote</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CHECKLIST DE CIERRE -->
+    <div id="checklistModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-quidel-darkCard rounded-2xl shadow-2xl border border-slate-200 dark:border-quidel-darkBorder w-full max-w-md overflow-hidden flex flex-col">
+            <div class="bg-quidel-navy text-white px-5 py-3 flex items-center justify-between border-b-2 border-quidel-burgundy">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-amber-400"></i>
+                    <h3 class="font-bold text-sm tracking-wide">Checklist de Cierre de Inventario</h3>
+                </div>
+                <button onclick="toggleChecklistModal()" class="text-slate-300 hover:text-white transition text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-5 flex flex-col gap-3 text-xs" id="checklistContent"></div>
+            <div class="bg-slate-100 dark:bg-slate-800 px-5 py-3 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-2">
+                <button onclick="toggleChecklistModal()" class="bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 px-4 py-1.5 rounded text-xs font-bold">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PROTEGIDO: REGLA DE IGUALACIÓN POR PRECIO -->
+    <div id="ruleModal" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-quidel-darkCard rounded-2xl shadow-2xl border border-slate-200 dark:border-quidel-darkBorder w-full max-w-2xl overflow-hidden flex flex-col">
+            <div class="bg-quidel-navy text-white px-5 py-3.5 flex items-center justify-between border-b-2 border-quidel-burgundy">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-shield-halved text-amber-400 text-lg"></i>
+                    <h3 class="font-bold text-sm tracking-wide">Igualar Referencias por Umbral de Coste (Cost/Unit)</h3>
+                </div>
+                <button onclick="toggleRuleModal()" class="text-slate-300 hover:text-white transition text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- PASO 1: LOGIN CONTRASEÑA -->
+            <div id="ruleAuthStep" class="p-6 flex flex-col gap-4">
+                <p class="text-xs text-slate-600 dark:text-slate-300">
+                    <i class="fa-solid fa-lock text-amber-600 mr-1"></i> Este menú está protegido por contraseña. Introduce la clave para continuar:
+                </p>
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">Contraseña de acceso:</label>
+                    <input type="password" id="rulePasswordInput" placeholder="Introduce la contraseña..." onkeydown="if(event.key==='Enter') verifyRulePassword()" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-bold focus:outline-none focus:border-quidel-burgundy">
+                </div>
+                <div class="flex justify-between items-center pt-2">
+                    <button onclick="toggleChangePasswordView()" class="text-[11px] text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 font-bold">
+                        <i class="fa-solid fa-key"></i> ¿Cambiar Contraseña?
+                    </button>
+                    <button onclick="verifyRulePassword()" class="bg-quidel-navy hover:bg-quidel-navyLight text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow">
+                        Acceder
+                    </button>
+                </div>
+
+                <div id="changePasswordSection" class="hidden mt-3 p-3 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-700 flex flex-col gap-2">
+                    <span class="text-xs font-bold text-quidel-navy dark:text-quidel-accent">Cambiar Contraseña Registrada</span>
+                    <input type="password" id="oldPassInput" placeholder="Contraseña actual..." class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded text-xs">
+                    <input type="password" id="newPassInput" placeholder="Nueva contraseña..." class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded text-xs">
+                    <button onclick="saveNewPassword()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded text-xs font-bold transition self-end">Guardar Nueva Clave</button>
+                </div>
+            </div>
+
+            <!-- PASO 2: CONFIRMACIÓN Y PREVISUALIZACIÓN -->
+            <div id="ruleConfigStep" class="hidden p-5 flex flex-col gap-4 max-h-[75vh] overflow-y-auto">
+                <div class="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 p-3 rounded-lg text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-600 text-base mt-0.5"></i>
+                    <div>
+                        <strong>Regla de igualación automática:</strong> Esta acción fijará <code>Qty Real = Qty On Hand</code> para TODAS las referencias registradas cuyo coste unitario (Cost/Unit) sea menor al límite indicado.
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <div class="flex-grow">
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1">Coste Máximo Límite ($ USD):</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2 text-slate-400 font-bold text-xs">$</span>
+                            <input type="number" id="ruleThresholdInput" step="0.01" min="0" placeholder="Ej: 10.00" oninput="previewMatchedReferences()" class="w-full pl-7 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-100 rounded-lg text-xs font-bold focus:outline-none focus:border-quidel-burgundy">
+                        </div>
+                    </div>
+                    <button onclick="previewMatchedReferences()" class="mt-5 bg-slate-800 hover:bg-slate-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition">
+                        <i class="fa-solid fa-magnifying-glass"></i> Calcular
+                    </button>
+                </div>
+
+                <div id="previewSummaryBox" class="hidden bg-slate-100 dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex justify-between items-center text-xs">
+                    <div>
+                        <span class="text-slate-500 dark:text-slate-400 block">Referencias afectadas:</span>
+                        <span id="previewCount" class="font-bold text-base text-quidel-navy dark:text-quidel-accent">0 refs</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500 dark:text-slate-400 block">Ajuste Neto Unidades:</span>
+                        <span id="previewUnits" class="font-bold text-base text-amber-600">0 uds</span>
+                    </div>
+                </div>
+
+                <div id="previewTableContainer" class="hidden border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden max-h-52 overflow-y-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-quidel-navy text-white sticky top-0">
+                            <tr>
+                                <th class="p-2">Item</th>
+                                <th class="p-2">Descripción</th>
+                                <th class="p-2 text-right">Cost/Unit ($)</th>
+                                <th class="p-2 text-center">Qty On Hand</th>
+                                <th class="p-2 text-center">Qty Real Actual</th>
+                            </tr>
+                        </thead>
+                        <tbody id="previewTableBody" class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-slate-900">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="ruleFooter" class="hidden bg-slate-100 dark:bg-slate-800 px-5 py-3 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                <button onclick="toggleRuleModal()" class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-4 py-1.5 rounded-lg text-xs font-medium transition">Cancelar</button>
+                <button onclick="executeRuleEqualization()" id="btnApplyRuleAction" disabled class="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-1.5 rounded-lg text-xs font-bold transition shadow flex items-center gap-1.5">
+                    <i class="fa-solid fa-check-double"></i> Confirmar e Igualar Referencias
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MOTOR JAVASCRIPT COMPLETO E INTEGRADO -->
+    <script>
+        let inventoryData = [];
+        let emailShipments = {};
+        let timerSeconds = 60;
+        let autoSyncDirHandle = null;
+        let currentLang = 'es';
+        let batchItems = {};
+        let favLocations = ["EST-A1", "EST-B2", "CONG-01", "CONG-02", "ALM-GEN"];
+        let currentStatusFilter = null;
+        let soundEnabled = true;
+        // Hash SHA-256 por defecto correspondiente a Quidel2026 para seguridad en repositorio público
+        const DEFAULT_PASS_HASH = "8224f090f20c994a7180c0d3a080886d1103f7f29f2a42eb366195a93d476c74";
+        let systemPasswordHash = localStorage.getItem('quidelortho_rule_pass_hash') || DEFAULT_PASS_HASH;
+        let pendingEqualizationList = [];
+
+        // VARIABLES ESCÁNER DE CÁMARA (HTML5-QRCODE)
+        let html5QrScanner = null;
+        let cameraScanMode = 'search'; // 'search' | 'batch'
+        let lastScannedCode = '';
+        let lastScannedTime = 0;
+
+        async function sha256(str) {
+            const buf = new TextEncoder().encode(str);
+            const hashBuf = await crypto.subtle.digest('SHA-256', buf);
+            return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        // WEB AUDIO SYNTHESIZER
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'success') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.08);
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.12);
+                } else if (type === 'error') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(180, audioCtx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.25);
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        // ----------------------------------------------------
+        // CONTROL DE CÁMARA (IPHONE / ANDROID / WEBCAM)
+        // ----------------------------------------------------
+        function openCameraScanner(mode) {
+            cameraScanMode = mode;
+            const modal = document.getElementById('cameraModal');
+            const banner = document.getElementById('cameraLastScanBanner');
+            document.getElementById('camModalTitle').innerText = mode === 'batch' ? 'Cámara - Escaneo Continuo Batch' : 'Cámara - Buscar / Asignar Pieza';
+            banner.classList.add('hidden');
+            modal.classList.remove('hidden');
+
+            if (!html5QrScanner) {
+                html5QrScanner = new Html5Qrcode("cameraReader");
+            }
+
+            const config = {
+                fps: 12,
+                qrbox: { width: 260, height: 140 },
+                aspectRatio: 1.333334
+            };
+
+            html5QrScanner.start(
+                { facingMode: "environment" },
+                config,
+                (decodedText) => {
+                    handleCameraDecodedText(decodedText);
+                },
+                () => {}
+            ).catch(err => {
+                alert("No se pudo iniciar la cámara. Asegúrate de abrir la página mediante HTTPS y conceder permisos de cámara en Safari/Chrome.\nDetalle: " + err);
+                closeCameraScanner();
+            });
+        }
+
+        function handleCameraDecodedText(rawText) {
+            const code = String(rawText || '').trim();
+            if (!code) return;
+
+            const now = Date.now();
+            if (code === lastScannedCode && (now - lastScannedTime) < 1500) {
+                return;
+            }
+            lastScannedCode = code;
+            lastScannedTime = now;
+
+            const banner = document.getElementById('cameraLastScanBanner');
+
+            if (cameraScanMode === 'batch') {
+                const match = findInventoryMatch(code);
+                const itemKey = match ? match.item : code;
+                const defaultUbic = document.getElementById('batchGlobalUbic').value.trim() || (match ? match.ubicacion : '');
+
+                if (match) {
+                    playSound('success');
+                    banner.className = "w-full p-2.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-400 text-emerald-900 dark:text-emerald-200 text-xs font-bold text-center";
+                } else {
+                    playSound('error');
+                    banner.className = "w-full p-2.5 rounded-lg bg-rose-100 dark:bg-rose-950/80 border border-rose-400 text-rose-900 dark:text-rose-200 text-xs font-bold text-center";
+                }
+
+                if (batchItems[itemKey]) {
+                    batchItems[itemKey].count++;
+                } else {
+                    batchItems[itemKey] = {
+                        code: itemKey,
+                        description: match ? match.description : 'Desconocido',
+                        onHand: match ? parseFloat(match.qtyOnHand) || 0 : 0,
+                        previousReal: match ? parseFloat(match.qtyReal) || 0 : 0,
+                        count: 1,
+                        ubicacion: defaultUbic,
+                        found: !!match
+                    };
+                }
+                renderBatchTable();
+                banner.innerText = `Leído (+1): ${itemKey} (Total lote: ${batchItems[itemKey].count})`;
+                banner.classList.remove('hidden');
+            } else {
+                const match = findInventoryMatch(code);
+                document.getElementById('superSearch').value = match ? match.item : code;
+                filterTable();
+
+                if (match) {
+                    playSound('success');
+                    closeCameraScanner();
+                } else {
+                    playSound('error');
+                    banner.className = "w-full p-2.5 rounded-lg bg-amber-100 dark:bg-amber-950/80 border border-amber-400 text-amber-900 dark:text-amber-200 text-xs font-bold text-center";
+                    banner.innerText = `Código leído: ${code} (No encontrado en inventario)`;
+                    banner.classList.remove('hidden');
+                }
+            }
+        }
+
+        function closeCameraScanner() {
+            const modal = document.getElementById('cameraModal');
+            modal.classList.add('hidden');
+            if (html5QrScanner && html5QrScanner.isScanning) {
+                html5QrScanner.stop().catch(() => {});
+            }
+        }
+
+        function toggleSoundFeedback() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('btnSoundToggle');
+            const icon = document.getElementById('soundIcon');
+            if (soundEnabled) {
+                btn.className = "bg-emerald-800 hover:bg-emerald-700 text-white border border-emerald-600 px-2.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow";
+                icon.className = "fa-solid fa-volume-high";
+                playSound('success');
+            } else {
+                btn.className = "bg-slate-700 hover:bg-slate-600 text-slate-400 border border-slate-600 px-2.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow";
+                icon.className = "fa-solid fa-volume-xmark";
+            }
+        }
+
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                icon.className = "fa-solid fa-moon";
+                localStorage.setItem('quidelortho_theme', 'light');
+            } else {
+                html.classList.add('dark');
+                icon.className = "fa-solid fa-sun";
+                localStorage.setItem('quidelortho_theme', 'dark');
+            }
+        }
+
+        // DICCIONARIOS MULTILINGÜES COMPLETOS
+        const translations = {
+            es: {
+                revInv: "Revisión de inventario", subTitle: "Control de stock FE", stockFE: "Stock FE", nombreFE: "Nombre FE", nombreFSS: "Nombre FSS/FSM", fecha: "Fecha",
+                btnImpCSV: "Importar CSV / TXT", btnImpMsg: "Importar .msg", syncFolder: "Auto-Sync", dlBdd: "Bajar BDD", loadBdd: "Cargar BDD", autoSave: "Auto", resetInv: "Reiniciar",
+                searchPlaceholder: "Buscar Ref / Item, Descripción o Ubicación...", clearFilters: "Limpiar Filtros", summaryTitle: "Resumen de Desviación de Inventario (Real vs. Previsto)",
+                lblOnHand: "Qty On Hand", lblQtyReal: "Qty Real (Conteo)", lblAjuste: "Ajuste Unidades", lblAccuracy: "Precisión Stock (%)", lblTotalCost: "Total Cost On Hand", lblCostAjuste: "Coste Desviado / Total",
+                filterOk: "Coincidentes", filterDiff: "Descuadres", filterPending: "Pendientes",
+                thGrp: "Grp", thItem: "Item", thDesc: "Description", thUbicacion: "Ubicación", thOnHand: "Qty On Hand", thQtyReal: "Qty Real", thAjuste: "Ajuste", thAlloc: "Qty Alloc.", thOnPO: "Qty On PO", thCostUnit: "Cost/Unit ($)", thTotalCost: "Total Cost ($)", thObs: "Observaciones", thLastShip: "Last Shipment", thOrigin: "Origen Conteo", thDateTime: "Fecha y Hora",
+                emptyTable: "Importa un fichero CSV/TXT o carga una BDD (.json) para comenzar.", recordCount: "Total registros: ", assign: "Asignar", assigned: "Asignado", columns: "Columnas", favTitle: "Favoritos (Máx 15)", btnSaveFav: "+ Guardar",
+                btnHelp: "Ayuda", showHide: "Mostrar/Ocultar", checklistBtn: "Checklist", copySummary: "Copiar", batchScan: "Escaneo Batch", autoMatchRule: "Igualar (< $X)",
+                optFilterAll: "Todos", optFilterNonZero: "Con Desviación (!= 0)", optFilterZero: "Sin Desviación (0)", optFilterPos: "Positivos (> 0)", optFilterNeg: "Negativos (< 0)"
+            },
+            en: {
+                revInv: "Inventory Review", subTitle: "FE Stock Control", stockFE: "FE Stock", nombreFE: "FE Name", nombreFSS: "FSS/FSM Name", fecha: "Date",
+                btnImpCSV: "Import CSV / TXT", btnImpMsg: "Import .msg", syncFolder: "Auto-Sync", dlBdd: "Download DB", loadBdd: "Load DB", autoSave: "Auto", resetInv: "Reset",
+                searchPlaceholder: "Search Ref / Item, Description or Location...", clearFilters: "Clear Filters", summaryTitle: "Inventory Variance Summary (Actual vs. Expected)",
+                lblOnHand: "Qty On Hand", lblQtyReal: "Qty Real (Count)", lblAjuste: "Unit Adjustment", lblAccuracy: "Stock Accuracy (%)", lblTotalCost: "Total Cost On Hand", lblCostAjuste: "Variance Cost / Total",
+                filterOk: "Matching", filterDiff: "Variances", filterPending: "Pending",
+                thGrp: "Grp", thItem: "Item", thDesc: "Description", thUbicacion: "Location", thOnHand: "Qty On Hand", thQtyReal: "Actual Qty", thAjuste: "Adjustment", thAlloc: "Qty Alloc.", thOnPO: "Qty On PO", thCostUnit: "Cost/Unit ($)", thTotalCost: "Total Cost ($)", thObs: "Observations", thLastShip: "Last Shipment", thOrigin: "Count Origin", thDateTime: "Date & Time",
+                emptyTable: "Import a CSV/TXT file or load a DB (.json) to get started.", recordCount: "Total records: ", assign: "Assign", assigned: "Assigned", columns: "Columns", favTitle: "Favorites (Max 15)", btnSaveFav: "+ Save",
+                btnHelp: "Help", showHide: "Show/Hide", checklistBtn: "Checklist", copySummary: "Copy", batchScan: "Batch Scan", autoMatchRule: "Match (< $X)",
+                optFilterAll: "All", optFilterNonZero: "With Variance (!= 0)", optFilterZero: "No Variance (0)", optFilterPos: "Positive (> 0)", optFilterNeg: "Negative (< 0)"
+            },
+            pt: {
+                revInv: "Revisão de Inventário", subTitle: "Controle de estoque FE", stockFE: "Estoque FE", nombreFE: "Nome FE", nombreFSS: "Nome FSS/FSM", fecha: "Data",
+                btnImpCSV: "Importar CSV / TXT", btnImpMsg: "Importar .msg", syncFolder: "Auto-Sync", dlBdd: "Baixar BD", loadBdd: "Carregar BD", autoSave: "Auto", resetInv: "Reiniciar",
+                searchPlaceholder: "Pesquisar Ref / Item, Descrição ou Localização...", clearFilters: "Limpar Filtros", summaryTitle: "Resumo de Desvio de Inventário",
+                lblOnHand: "Qty On Hand", lblQtyReal: "Qty Real (Contagem)", lblAjuste: "Ajuste Unidades", lblAccuracy: "Precisão Estoque (%)", lblTotalCost: "Total Cost On Hand", lblCostAjuste: "Custo Desviado / Total",
+                filterOk: "Coincidentes", filterDiff: "Divergentes", filterPending: "Pendentes",
+                thGrp: "Grp", thItem: "Item", thDesc: "Description", thUbicacion: "Localização", thOnHand: "Qty On Hand", thQtyReal: "Qty Real", thAjuste: "Ajuste", thAlloc: "Qty Alloc.", thOnPO: "Qty On PO", thCostUnit: "Cost/Unit ($)", thTotalCost: "Total Cost ($)", thObs: "Observações", thLastShip: "Last Shipment", thOrigin: "Origem Contagem", thDateTime: "Data e Hora",
+                emptyTable: "Importe um arquivo CSV/TXT ou carregue um BD (.json) para começar.", recordCount: "Total de registros: ", assign: "Atribuir", assigned: "Atribuído", columns: "Colunas", favTitle: "Favoritos (Máx 15)", btnSaveFav: "+ Salvar",
+                btnHelp: "Ajuda", showHide: "Mostrar/Ocultar", checklistBtn: "Checklist", copySummary: "Copiar", batchScan: "Leitura Lote", autoMatchRule: "Igualar (< $X)",
+                optFilterAll: "Todos", optFilterNonZero: "Com Desvio (!= 0)", optFilterZero: "Sem Desvio (0)", optFilterPos: "Positivos (> 0)", optFilterNeg: "Negativos (< 0)"
+            },
+            de: {
+                revInv: "Inventurprüfung", subTitle: "FE Bestandsverwaltung", stockFE: "FE Bestand", nombreFE: "FE Name", nombreFSS: "FSS/FSM Name", fecha: "Datum",
+                btnImpCSV: "CSV / TXT importieren", btnImpMsg: ".msg importieren", syncFolder: "Auto-Sync", dlBdd: "DB laden", loadBdd: "DB öffnen", autoSave: "Auto", resetInv: "Zurücksetzen",
+                searchPlaceholder: "Ref / Artikel, Beschreibung oder Standort suchen...", clearFilters: "Filter zurücksetzen", summaryTitle: "Bestandsabweichungsübersicht (Ist vs. Soll)",
+                lblOnHand: "Qty On Hand", lblQtyReal: "Ist-Menge (Zählung)", lblAjuste: "Mengenanpassung", lblAccuracy: "Bestandsgenauigkeit (%)", lblTotalCost: "Total Cost On Hand", lblCostAjuste: "Abweichungskosten / Gesamt",
+                filterOk: "Übereinstimmend", filterDiff: "Abweichungen", filterPending: "Ausstehend",
+                thGrp: "Grp", thItem: "Artikel", thDesc: "Beschreibung", thUbicacion: "Standort", thOnHand: "Qty On Hand", thQtyReal: "Ist-Menge", thAjuste: "Anpassung", thAlloc: "Qty Alloc.", thOnPO: "Qty On PO", thCostUnit: "Cost/Unit ($)", thTotalCost: "Total Cost ($)", thObs: "Bemerkungen", thLastShip: "Last Shipment", thOrigin: "Zählursprung", thDateTime: "Datum & Uhrzeit",
+                emptyTable: "Importieren Sie eine CSV/TXT-Datei, um zu beginnen.", recordCount: "Datensätze gesamt: ", assign: "Zuweisen", assigned: "Zugewiesen", columns: "Spalten", favTitle: "Favoriten (Max 15)", btnSaveFav: "+ Speichern",
+                btnHelp: "Hilfe", showHide: "Ein-/Ausblenden", checklistBtn: "Checkliste", copySummary: "Kopieren", batchScan: "Batch-Scan", autoMatchRule: "Abgleichen (< $X)",
+                optFilterAll: "Alle", optFilterNonZero: "Mit Abweichung (!= 0)", optFilterZero: "Keine Abweichung (0)", optFilterPos: "Positiv (> 0)", optFilterNeg: "Negativ (< 0)"
+            },
+            nl: {
+                revInv: "Voorraadcontrole", subTitle: "FE Voorraadbeheer", stockFE: "FE Voorraad", nombreFE: "FE Naam", nombreFSS: "FSS/FSM Naam", fecha: "Datum",
+                btnImpCSV: "CSV / TXT importeren", btnImpMsg: ".msg importeren", syncFolder: "Auto-Sync", dlBdd: "DB Downloaden", loadBdd: "DB Laden", autoSave: "Auto", resetInv: "Resetten",
+                searchPlaceholder: "Zoek Ref / Artikel, Omschrijving of Locatie...", clearFilters: "Filters Wissen", summaryTitle: "Voorraadverschil Overzicht (Werkelijk vs. Verwacht)",
+                lblOnHand: "Qty On Hand", lblQtyReal: "Werkelijke Qty (Tel)", lblAjuste: "Eenheidsaanpassing", lblAccuracy: "Voorraadnauwkeurigheid (%)", lblTotalCost: "Total Cost On Hand", lblCostAjuste: "Verschil Kosten / Totaal",
+                filterOk: "Overeenkomend", filterDiff: "Verschillen", filterPending: "In afwachting",
+                thGrp: "Grp", thItem: "Artikel", thDesc: "Omschrijving", thUbicacion: "Locatie", thOnHand: "Qty On Hand", thQtyReal: "Werkelijke Qty", thAjuste: "Aanpassing", thAlloc: "Qty Alloc.", thOnPO: "Qty On PO", thCostUnit: "Cost/Unit ($)", thTotalCost: "Total Cost ($)", thObs: "Opmerkingen", thLastShip: "Last Shipment", thOrigin: "Telling Oorsprong", thDateTime: "Datum & Tijd",
+                emptyTable: "Importeer een CSV/TXT-bestand om te beginnen.", recordCount: "Totaal aantal records: ", assign: "Toewijzen", assigned: "Toegewezen", columns: "Kolommen", favTitle: "Favorieten (Max 15)", btnSaveFav: "+ Opslaan",
+                btnHelp: "Hulp", showHide: "Tonen/Verbergen", checklistBtn: "Checklist", copySummary: "Kopiëren", batchScan: "Batch Scan", autoMatchRule: "Gelijkstellen (< $X)",
+                optFilterAll: "Alle", optFilterNonZero: "Met Verschil (!= 0)", optFilterZero: "Geen Verschil (0)", optFilterPos: "Positief (> 0)", optFilterNeg: "Negatief (< 0)"
+            },
+            it: {
+                revInv: "Revisione Inventario", subTitle: "Controllo scorte FE", stockFE: "Stock FE", nombreFE: "Nome FE", nombreFSS: "Nome FSS/FSM", fecha: "Data",
+                btnImpCSV: "Importa CSV / TXT", btnImpMsg: "Importa .msg", syncFolder: "Auto-Sync", dlBdd: "Scarica DB", loadBdd: "Carica DB", autoSave: "Auto", resetInv: "Ripristina",
+                searchPlaceholder: "Cerca Rif / Articolo, Descrizione o Ubicazione...", clearFilters: "Pulisci Filtri", summaryTitle: "Riepilogo Scostamento Inventario (Reale vs. Previsto)",
+                lblOnHand: "Qty On Hand", lblQtyReal: "Qty Reale (Conteggio)", lblAjuste: "Modifica Unità", lblAccuracy: "Accuratezza Stock (%)", lblTotalCost: "Total Cost On Hand", lblCostAjuste: "Costo Scostamento / Totale",
+                filterOk: "Concordanti", filterDiff: "Discrepanze", filterPending: "In sospeso",
+                thGrp: "Grp", thItem: "Articolo", thDesc: "Descrizione", thUbicacion: "Ubicazione", thOnHand: "Qty On Hand", thQtyReal: "Qty Reale", thAjuste: "Adeguamento", thAlloc: "Qty Alloc.", thOnPO: "Qty On PO", thCostUnit: "Cost/Unit ($)", thTotalCost: "Total Cost ($)", thObs: "Osservazioni", thLastShip: "Last Shipment", thOrigin: "Origine Conteggio", thDateTime: "Data e Ora",
+                emptyTable: "Importa un file CSV/TXT per iniziare.", recordCount: "Totale record: ", assign: "Assegna", assigned: "Assegnato", columns: "Colonne", favTitle: "Preferiti (Max 15)", btnSaveFav: "+ Salva",
+                btnHelp: "Aiuto", showHide: "Mostra/Nascondi", checklistBtn: "Checklist", copySummary: "Copia", batchScan: "Scansione Lotto", autoMatchRule: "Uguaglia (< $X)",
+                optFilterAll: "Tutti", optFilterNonZero: "Con Scostamento (!= 0)", optFilterZero: "Senza Scostamento (0)", optFilterPos: "Positivi (> 0)", optFilterNeg: "Negativi (< 0)"
+            }
+        };
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            const t = translations[lang] || translations['es'];
+            document.getElementById('txtRevInv').innerText = t.revInv;
+            document.getElementById('txtSubTitle').innerText = t.subTitle;
+            document.getElementById('lblStockFE').innerText = t.stockFE;
+            document.getElementById('lblNombreFE').innerText = t.nombreFE;
+            document.getElementById('lblNombreFSS').innerText = t.nombreFSS;
+            document.getElementById('lblFecha').innerText = t.fecha;
+            document.getElementById('superSearch').placeholder = t.searchPlaceholder;
+            
+            document.getElementById('txtBtnImpCSV').innerText = t.btnImpCSV;
+            document.getElementById('txtBtnImpMsg').innerText = t.btnImpMsg;
+            document.getElementById('txtBtnDlBdd').innerText = t.dlBdd;
+            document.getElementById('txtBtnLoadBdd').innerText = t.loadBdd;
+            document.getElementById('txtAutoSave').innerText = t.autoSave;
+            document.getElementById('txtResetInv').innerText = t.resetInv;
+            document.getElementById('txtColumns').innerText = t.columns;
+            document.getElementById('txtAssign').innerText = t.assign;
+            document.getElementById('txtAssigned').innerText = t.assigned;
+            document.getElementById('txtClearFilters').innerText = t.clearFilters;
+            document.getElementById('txtSummaryTitleText').innerText = t.summaryTitle;
+            document.getElementById('txtAutoMatchRule').innerText = t.autoMatchRule;
+            
+            document.getElementById('txtFilterOk').innerText = t.filterOk;
+            document.getElementById('txtFilterDiff').innerText = t.filterDiff;
+            document.getElementById('txtFilterPending').innerText = t.filterPending;
+            document.getElementById('txtFavTitle').innerText = t.favTitle;
+            document.getElementById('txtBtnSaveFav').innerText = t.btnSaveFav;
+
+            document.getElementById('txtBtnHelp').innerText = t.btnHelp;
+            document.getElementById('txtShowHide').innerText = t.showHide;
+            document.getElementById('txtChecklistBtn').innerText = t.checklistBtn;
+            document.getElementById('txtCopySummary').innerText = t.copySummary;
+            document.getElementById('txtBatchScan').innerText = t.batchScan;
+
+            document.getElementById('optFilterAll').innerText = t.optFilterAll;
+            document.getElementById('optFilterNonZero').innerText = t.optFilterNonZero;
+            document.getElementById('optFilterZero').innerText = t.optFilterZero;
+            document.getElementById('optFilterPos').innerText = t.optFilterPos;
+            document.getElementById('optFilterNeg').innerText = t.optFilterNeg;
+
+            document.getElementById('lblKpiOnHand').innerText = t.lblOnHand;
+            document.getElementById('lblKpiQtyReal').innerText = t.lblQtyReal;
+            document.getElementById('lblKpiAjuste').innerText = t.lblAjuste;
+            document.getElementById('lblKpiAccuracy').innerText = t.lblAccuracy;
+            document.getElementById('lblKpiTotalCost').innerText = t.lblTotalCost;
+            document.getElementById('lblKpiCostAjuste').innerText = t.lblCostAjuste;
+
+            document.getElementById('thGrp').innerText = t.thGrp;
+            document.getElementById('thItem').innerText = t.thItem;
+            document.getElementById('thDesc').innerText = t.thDesc;
+            document.getElementById('thUbicacion').innerText = t.thUbicacion;
+            document.getElementById('thOnHand').innerText = t.thOnHand;
+            document.getElementById('thQtyReal').innerText = t.thQtyReal;
+            document.getElementById('thAjuste').innerText = t.thAjuste;
+            document.getElementById('thAlloc').innerText = t.thAlloc;
+            document.getElementById('thOnPO').innerText = t.thOnPO;
+            document.getElementById('thCostUnit').innerText = t.thCostUnit;
+            document.getElementById('thTotalCost').innerText = t.thTotalCost;
+            document.getElementById('thObs').innerText = t.thObs;
+            document.getElementById('thLastShip').innerText = t.thLastShip;
+            document.getElementById('thOrigin').innerText = t.thOrigin;
+            document.getElementById('thDateTime').innerText = t.thDateTime;
+
+            filterTable();
+        }
+
+        const columnKeys = ['whs', 'grp', 'item', 'description', 'ubicacion', 'qtyOnHand', 'qtyReal', 'ajuste', 'qtyAlloc', 'qtyOnPO', 'costUnit', 'totalCost', 'observaciones', 'lastShipment', 'origen', 'fechaHora'];
+        let columnVisibility = {
+            whs: true, grp: true, item: true, description: true, ubicacion: true,
+            qtyOnHand: true, qtyReal: true, ajuste: true, qtyAlloc: true, qtyOnPO: true,
+            costUnit: true, totalCost: true, observaciones: true, lastShipment: true, origen: true, fechaHora: true
+        };
+
+        function initColumnCheckboxes() {
+            const container = document.getElementById('columnCheckboxes');
+            container.innerHTML = '';
+            const labels = {
+                whs: 'WHS', grp: 'Grp', item: 'Item', description: 'Description', ubicacion: 'Ubicación',
+                qtyOnHand: 'Qty On Hand', qtyReal: 'Qty Real', ajuste: 'Ajuste', qtyAlloc: 'Qty Alloc.',
+                qtyOnPO: 'Qty On PO', costUnit: 'Cost/Unit', totalCost: 'Total Cost', observaciones: 'Observaciones',
+                lastShipment: 'Last Shipment', origen: 'Origen Conteo', fechaHora: 'Fecha y Hora'
+            };
+            columnKeys.forEach(key => {
+                const label = document.createElement('label');
+                label.className = "flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300 hover:text-quidel-navy select-none";
+                label.innerHTML = `<input type="checkbox" checked onchange="toggleColumnVisibility('${key}', this.checked)" class="rounded text-quidel-burgundy focus:ring-quidel-burgundy"> ${labels[key] || key}`;
+                container.appendChild(label);
+            });
+        }
+
+        function toggleColumnDropdown() {
+            document.getElementById('columnDropdownMenu').classList.toggle('hidden');
+        }
+
+        function toggleColumnVisibility(key, isVisible) {
+            columnVisibility[key] = isVisible;
+            applyColumnVisibilityToDOM();
+        }
+
+        function applyColumnVisibilityToDOM() {
+            columnKeys.forEach((key, idx) => {
+                document.querySelectorAll(`[data-col-idx="${idx}"]`).forEach(th => th.style.display = columnVisibility[key] ? '' : 'none');
+                document.querySelectorAll(`.col-cell-${idx}`).forEach(td => td.style.display = columnVisibility[key] ? '' : 'none');
+            });
+        }
+
+        // LÓGICA FAVORITOS UBICACIÓN
+        function toggleFavDropdown() {
+            document.getElementById('favLocationsMenu').classList.toggle('hidden');
+        }
+
+        function renderFavLocations() {
+            const container = document.getElementById('favLocationsList');
+            container.innerHTML = '';
+            favLocations.forEach((loc, index) => {
+                const div = document.createElement('div');
+                div.className = "w-full px-2 py-1 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/60 rounded font-bold text-amber-900 dark:text-amber-200 flex justify-between items-center text-xs";
+                div.innerHTML = `
+                    <span class="cursor-pointer flex-grow" onclick="selectFavLocation('${loc}')">${loc}</span>
+                    <button onclick="removeFavLocation(${index})" class="text-rose-600 dark:text-rose-400 hover:underline px-1 text-xs" title="Eliminar favorito"><i class="fa-solid fa-trash-can"></i></button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function selectFavLocation(loc) {
+            document.getElementById('persistentUbicacion').value = loc;
+            saveToLocalStorage();
+            toggleFavDropdown();
+        }
+
+        function addCurrentUbicToFavs() {
+            const currentVal = document.getElementById('persistentUbicacion').value.trim().toUpperCase();
+            if (!currentVal) return;
+            if (!favLocations.includes(currentVal)) {
+                if (favLocations.length >= 15) favLocations.shift();
+                favLocations.push(currentVal);
+                renderFavLocations();
+                saveToLocalStorage();
+            }
+        }
+
+        function removeFavLocation(index) {
+            favLocations.splice(index, 1);
+            renderFavLocations();
+            saveToLocalStorage();
+        }
+
+        // INICIALIZACIÓN DE LA APLICACIÓN
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('quidelortho_theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+                document.getElementById('themeIcon').className = "fa-solid fa-sun";
+            }
+
+            initColumnCheckboxes();
+            
+            const saved = localStorage.getItem('quidelortho_inventory');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    inventoryData = (parsed.data || []).map(item => ({
+                        ...item,
+                        qtyOnHand: parseFloat(item.qtyOnHand) || 0,
+                        qtyReal: parseFloat(item.qtyReal) || 0,
+                        ajuste: item.origen === 'Pendiente' ? - (parseFloat(item.qtyOnHand) || 0) : (parseFloat(item.ajuste) || 0),
+                        costUnit: parseFloat(item.costUnit) || 0,
+                        totalCost: parseFloat(item.totalCost) || 0
+                    }));
+                    if (parsed.favLocations && Array.isArray(parsed.favLocations)) {
+                        favLocations = parsed.favLocations;
+                    }
+                    if (parsed.header) {
+                        document.getElementById('headerStockFE').value = parsed.header.stockFE || '';
+                        document.getElementById('headerNombreFE').value = parsed.header.nombreFE || '';
+                        document.getElementById('headerNombreFSS').value = parsed.header.nombreFSS || '';
+                        document.getElementById('headerFecha').value = parsed.header.fecha || new Date().toISOString().split('T')[0];
+                        if (parsed.header.persistentUbicacion !== undefined) {
+                            document.getElementById('persistentUbicacion').value = parsed.header.persistentUbicacion;
+                        }
+                    }
+                } catch(e) { console.error(e); }
+            } else {
+                document.getElementById('headerFecha').value = new Date().toISOString().split('T')[0];
+            }
+            
+            renderFavLocations();
+            filterTable();
+
+            ['headerStockFE', 'headerNombreFE', 'headerNombreFSS', 'headerFecha', 'persistentUbicacion'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', saveToLocalStorage);
+            });
+
+            const superSearchInput = document.getElementById('superSearch');
+            superSearchInput.addEventListener('dblclick', () => {
+                superSearchInput.value = '';
+                filterTable();
+                superSearchInput.focus();
+            });
+
+            setInterval(() => {
+                timerSeconds--;
+                if (timerSeconds <= 0) {
+                    saveToLocalStorage();
+                    timerSeconds = 60;
+                }
+                document.getElementById('timerSeconds').innerText = timerSeconds;
+            }, 1000);
+        });
+
+        // FUNCIONES DE CONTROL DE MODALES
+        function toggleHelpModal() {
+            document.getElementById('helpModal').classList.toggle('hidden');
+        }
+
+        function switchHelpTab(tabId) {
+            ['tab1', 'tab2', 'tab3', 'tab4', 'tab5'].forEach((t, i) => {
+                const tabEl = document.getElementById(`helpTab${i+1}`);
+                const btnEl = document.getElementById(`helpTabBtn${i+1}`);
+                if (`tab${i+1}` === tabId) {
+                    tabEl.classList.remove('hidden');
+                    btnEl.classList.add('active');
+                } else {
+                    tabEl.classList.add('hidden');
+                    btnEl.classList.remove('active');
+                }
+            });
+        }
+
+        function toggleAuditModal() {
+            document.getElementById('auditModal').classList.toggle('hidden');
+        }
+
+        function openAuditModal(itemCode) {
+            const row = inventoryData.find(i => i.item === itemCode);
+            if (!row) return;
+            document.getElementById('auditItemInfo').innerText = `Ítem: ${row.item} | Desc: ${row.description}`;
+            const container = document.getElementById('auditTimeline');
+            container.innerHTML = '';
+
+            const history = row.history || [
+                { fechaHora: row.fechaHora || '-', origen: row.origen || 'Pendiente', qtyReal: row.qtyReal, ubicacion: row.ubicacion || '-' }
+            ];
+
+            history.forEach(h => {
+                const itemEl = document.createElement('div');
+                itemEl.className = "bg-slate-50 dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700 flex justify-between items-center";
+                itemEl.innerHTML = `
+                    <div>
+                        <span class="font-bold text-quidel-navy dark:text-quidel-accent">${h.origen}</span>
+                        <span class="block text-[10px] text-slate-500 dark:text-slate-400">${h.fechaHora}</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-bold text-amber-800 dark:text-amber-300">Qty: ${h.qtyReal}</span>
+                        <span class="block text-[10px] text-slate-500 dark:text-slate-400">Ubic: ${h.ubicacion || '-'}</span>
+                    </div>
+                `;
+                container.appendChild(itemEl);
+            });
+
+            document.getElementById('auditModal').classList.remove('hidden');
+        }
+
+        function toggleChecklistModal() {
+            const modal = document.getElementById('checklistModal');
+            modal.classList.toggle('hidden');
+            if (!modal.classList.contains('hidden')) {
+                renderChecklist();
+            }
+        }
+
+        function renderChecklist() {
+            const container = document.getElementById('checklistContent');
+            const stockFe = document.getElementById('headerStockFE').value.trim();
+            const nombreFE = document.getElementById('headerNombreFE').value.trim();
+            const nombreFSS = document.getElementById('headerNombreFSS').value.trim();
+
+            let pendingCount = 0;
+            let diffCount = 0;
+            inventoryData.forEach(r => {
+                if (r.origen === 'Pendiente') pendingCount++;
+                if (r.origen !== 'Pendiente' && r.ajuste !== 0) diffCount++;
+            });
+
+            container.innerHTML = `
+                <div class="flex items-center justify-between p-2 rounded ${stockFe ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800' : 'bg-rose-50 dark:bg-rose-950/40 text-rose-900 dark:text-rose-200 border border-rose-200 dark:border-rose-800'}">
+                    <span>Código Stock FE: <strong>${stockFe || 'Falta rellenar'}</strong></span>
+                    <i class="fa-solid ${stockFe ? 'fa-circle-check text-emerald-600 dark:text-emerald-400' : 'fa-circle-xmark text-rose-600 dark:text-rose-400'}"></i>
+                </div>
+                <div class="flex items-center justify-between p-2 rounded ${nombreFE ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800' : 'bg-rose-50 dark:bg-rose-950/40 text-rose-900 dark:text-rose-200 border border-rose-200 dark:border-rose-800'}">
+                    <span>Nombre FE: <strong>${nombreFE || 'Falta rellenar'}</strong></span>
+                    <i class="fa-solid ${nombreFE ? 'fa-circle-check text-emerald-600 dark:text-emerald-400' : 'fa-circle-xmark text-rose-600 dark:text-rose-400'}"></i>
+                </div>
+                <div class="flex items-center justify-between p-2 rounded ${nombreFSS ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800' : 'bg-rose-50 dark:bg-rose-950/40 text-rose-900 dark:text-rose-200 border border-rose-200 dark:border-rose-800'}">
+                    <span>Nombre FSS/FSM: <strong>${nombreFSS || 'Falta rellenar'}</strong></span>
+                    <i class="fa-solid ${nombreFSS ? 'fa-circle-check text-emerald-600 dark:text-emerald-400' : 'fa-circle-xmark text-rose-600 dark:text-rose-400'}"></i>
+                </div>
+                <div class="flex items-center justify-between p-2 rounded ${pendingCount === 0 ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800' : 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border border-amber-200 dark:border-amber-800'}">
+                    <span>Revisión de Ítems: <strong>${inventoryData.length - pendingCount} / ${inventoryData.length} contados</strong></span>
+                    <i class="fa-solid ${pendingCount === 0 ? 'fa-circle-check text-emerald-600 dark:text-emerald-400' : 'fa-circle-exclamation text-amber-600 dark:text-amber-400'}"></i>
+                </div>
+                <div class="flex items-center justify-between p-2 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                    <span>Descuadres Detectados: <strong>${diffCount} referencias con variación</strong></span>
+                    <i class="fa-solid fa-chart-pie text-slate-600 dark:text-slate-400"></i>
+                </div>
+            `;
+        }
+
+        // MODAL DE ESCANEO BATCH OPERATIVO
+        function toggleBatchModal() {
+            const modal = document.getElementById('batchModal');
+            modal.classList.toggle('hidden');
+            if (!modal.classList.contains('hidden')) {
+                const activeUbic = document.getElementById('persistentUbicacion').value.trim();
+                document.getElementById('batchGlobalUbic').value = activeUbic;
+                renderBatchTable();
+                setTimeout(() => document.getElementById('batchBarcodeInput').focus(), 100);
+            }
+        }
+
+        function findInventoryMatch(code) {
+            const n = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+            if (!n) return null;
+            return inventoryData.find(r => String(r.item || '').toUpperCase().replace(/[^A-Z0-9]/g, '') === n) || null;
+        }
+
+        function handleBatchScanKey(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const code = e.target.value.trim();
+                if (code) {
+                    const match = findInventoryMatch(code);
+                    const itemKey = match ? match.item : code;
+                    const defaultUbic = document.getElementById('batchGlobalUbic').value.trim() || (match ? match.ubicacion : '');
+                    
+                    if (match) playSound('success');
+                    else playSound('error');
+
+                    if (batchItems[itemKey]) {
+                        batchItems[itemKey].count++;
+                    } else {
+                        batchItems[itemKey] = {
+                            code: itemKey,
+                            description: match ? match.description : 'Desconocido',
+                            onHand: match ? parseFloat(match.qtyOnHand) || 0 : 0,
+                            previousReal: match ? parseFloat(match.qtyReal) || 0 : 0,
+                            count: 1,
+                            ubicacion: defaultUbic,
+                            found: !!match
+                        };
+                    }
+                    renderBatchTable();
+                }
+                e.target.value = '';
+                e.target.focus();
+            }
+        }
+
+        function updateBatchItemCount(key, val) {
+            if (batchItems[key]) {
+                batchItems[key].count = parseFloat(val) || 0;
+                renderBatchTable();
+            }
+        }
+
+        function updateBatchItemUbic(key, val) {
+            if (batchItems[key]) {
+                batchItems[key].ubicacion = val.toUpperCase();
+            }
+        }
+
+        function applyGlobalUbicToBatch(val) {
+            const upperVal = val.toUpperCase();
+            Object.keys(batchItems).forEach(k => {
+                batchItems[k].ubicacion = upperVal;
+            });
+            renderBatchTable();
+        }
+
+        function renderBatchTable() {
+            const tbody = document.getElementById('batchTableBody');
+            tbody.innerHTML = '';
+            const keys = Object.keys(batchItems);
+
+            if (keys.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-slate-400 italic">No hay ítems escaneados en este lote</td></tr>';
+                document.getElementById('batchTotalCount').innerText = '0 ítems';
+                return;
+            }
+
+            let totalUnits = 0;
+            keys.forEach(k => {
+                const item = batchItems[k];
+                totalUnits += item.count;
+                const projectedReal = item.previousReal + item.count;
+                const isOk = projectedReal === item.onHand;
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-200 dark:border-slate-700 hover:bg-slate-100/50 dark:hover:bg-slate-800/50";
+                tr.innerHTML = `
+                    <td class="p-2 text-center">
+                        ${isOk ? '<i class="fa-solid fa-circle-check text-emerald-600 dark:text-emerald-400 text-sm" title="Coincide con On Hand"></i>' : '<i class="fa-solid fa-circle-xmark text-rose-600 dark:text-rose-400 text-sm" title="Descuadre respecto a On Hand"></i>'}
+                    </td>
+                    <td class="p-2 font-bold ${item.found ? 'text-quidel-navy dark:text-quidel-accent' : 'text-rose-600 dark:text-rose-400'}">
+                        ${item.code} <span class="block text-[10px] font-normal text-slate-500 dark:text-slate-400">${item.description}</span>
+                    </td>
+                    <td class="p-2 text-center font-semibold text-slate-700 dark:text-slate-300">${item.onHand}</td>
+                    <td class="p-2 text-center font-bold text-slate-800 dark:text-slate-200 bg-slate-200/50 dark:bg-slate-800">${item.previousReal}</td>
+                    <td class="p-2 text-center">
+                        <input type="number" min="1" value="${item.count}" oninput="updateBatchItemCount('${k}', this.value)" class="w-16 px-1.5 py-0.5 border border-amber-300 dark:border-amber-700 rounded text-center text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/40">
+                    </td>
+                    <td class="p-2 text-center">
+                        <input type="text" value="${item.ubicacion || ''}" oninput="updateBatchItemUbic('${k}', this.value)" class="w-24 px-1.5 py-0.5 border border-amber-300 dark:border-amber-700 rounded text-center text-xs font-bold uppercase text-amber-900 dark:text-amber-200 bg-white dark:bg-slate-800">
+                    </td>
+                    <td class="p-2 text-right">
+                        <button onclick="removeBatchItem('${k}')" class="text-rose-600 dark:text-rose-400 hover:underline text-xs px-1"><i class="fa-solid fa-xmark"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('batchTotalCount').innerText = `${totalUnits} lecturas (${keys.length} refs)`;
+        }
+
+        function removeBatchItem(key) {
+            delete batchItems[key];
+            renderBatchTable();
+            document.getElementById('batchBarcodeInput').focus();
+        }
+
+        function clearBatchList() {
+            batchItems = {};
+            renderBatchTable();
+            document.getElementById('batchBarcodeInput').focus();
+        }
+
+        function applyBatchItems() {
+            const keys = Object.keys(batchItems);
+            if (keys.length === 0) {
+                alert("El lote de escaneo está vacío.");
+                return;
+            }
+
+            let appliedCount = 0;
+
+            keys.forEach(k => {
+                const batchObj = batchItems[k];
+                const match = findInventoryMatch(batchObj.code);
+                if (match) {
+                    const prevQty = match.qtyReal;
+                    if (batchObj.ubicacion !== '') match.ubicacion = batchObj.ubicacion;
+                    match.qtyReal = (parseFloat(match.qtyReal) || 0) + batchObj.count;
+                    match.ajuste = match.qtyReal - match.qtyOnHand;
+                    match.origen = 'Batch';
+                    match.fechaHora = new Date().toLocaleString();
+                    addAuditRecord(match, 'Batch', prevQty);
+                    appliedCount++;
+                }
+            });
+
+            saveToLocalStorage();
+            filterTable();
+            clearBatchList();
+            toggleBatchModal();
+
+            playSound('success');
+            alert(`¡Lote procesado con éxito! Se actualizaron ${appliedCount} referencias con origen Batch.`);
+        }
+
+        // LÓGICA DEL MODAL PROTEGIDO DE IGUALACIÓN POR PRECIO (CON HASH SHA-256)
+        function toggleRuleModal() {
+            const modal = document.getElementById('ruleModal');
+            modal.classList.toggle('hidden');
+            if (!modal.classList.contains('hidden')) {
+                document.getElementById('ruleAuthStep').classList.remove('hidden');
+                document.getElementById('ruleConfigStep').classList.add('hidden');
+                document.getElementById('ruleFooter').classList.add('hidden');
+                document.getElementById('rulePasswordInput').value = '';
+                document.getElementById('ruleThresholdInput').value = '';
+                document.getElementById('previewSummaryBox').classList.add('hidden');
+                document.getElementById('previewTableContainer').classList.add('hidden');
+                document.getElementById('rulePasswordInput').focus();
+            }
+        }
+
+        function toggleChangePasswordView() {
+            document.getElementById('changePasswordSection').classList.toggle('hidden');
+        }
+
+        async function verifyRulePassword() {
+            const pass = document.getElementById('rulePasswordInput').value.trim();
+            const passHash = await sha256(pass);
+            if (passHash === systemPasswordHash) {
+                playSound('success');
+                document.getElementById('ruleAuthStep').classList.add('hidden');
+                document.getElementById('ruleConfigStep').classList.remove('hidden');
+                document.getElementById('ruleFooter').classList.remove('hidden');
+                document.getElementById('ruleThresholdInput').focus();
+            } else {
+                playSound('error');
+                alert("❌ Contraseña incorrecta.");
+            }
+        }
+
+        async function saveNewPassword() {
+            const oldP = document.getElementById('oldPassInput').value.trim();
+            const newP = document.getElementById('newPassInput').value.trim();
+            const oldHash = await sha256(oldP);
+
+            if (oldHash !== systemPasswordHash) {
+                alert("La contraseña actual introducida no coincide.");
+                return;
+            }
+            if (!newP) {
+                alert("Introduce una contraseña válida.");
+                return;
+            }
+
+            systemPasswordHash = await sha256(newP);
+            localStorage.setItem('quidelortho_rule_pass_hash', systemPasswordHash);
+            alert("¡Contraseña actualizada con éxito!");
+            document.getElementById('changePasswordSection').classList.add('hidden');
+        }
+
+        function previewMatchedReferences() {
+            const thresholdStr = document.getElementById('ruleThresholdInput').value;
+            const threshold = parseFloat(thresholdStr);
+            const btnApply = document.getElementById('btnApplyRuleAction');
+
+            if (isNaN(threshold) || threshold < 0) {
+                document.getElementById('previewSummaryBox').classList.add('hidden');
+                document.getElementById('previewTableContainer').classList.add('hidden');
+                btnApply.disabled = true;
+                return;
+            }
+
+            pendingEqualizationList = inventoryData.filter(r => (parseFloat(r.costUnit) || 0) < threshold);
+
+            const summaryBox = document.getElementById('previewSummaryBox');
+            const tableContainer = document.getElementById('previewTableContainer');
+            const tbody = document.getElementById('previewTableBody');
+
+            tbody.innerHTML = '';
+            let totalAdjustmentUnits = 0;
+
+            pendingEqualizationList.forEach(item => {
+                const currentReal = item.origen === 'Pendiente' ? 0 : item.qtyReal;
+                const diff = item.qtyOnHand - currentReal;
+                totalAdjustmentUnits += Math.abs(diff);
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 dark:hover:bg-slate-800 border-b border-slate-100 dark:border-slate-800";
+                tr.innerHTML = `
+                    <td class="p-2 font-bold text-quidel-navy dark:text-quidel-accent">${item.item}</td>
+                    <td class="p-2 font-semibold text-slate-700 dark:text-slate-300">${item.description}</td>
+                    <td class="p-2 text-right font-bold text-emerald-700 dark:text-emerald-400">$${item.costUnit.toFixed(2)}</td>
+                    <td class="p-2 text-center font-bold text-slate-800 dark:text-slate-100">${item.qtyOnHand}</td>
+                    <td class="p-2 text-center font-bold ${item.origen === 'Pendiente' ? 'text-amber-500' : 'text-slate-600'}">${item.origen === 'Pendiente' ? 'Pendiente' : item.qtyReal}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('previewCount').innerText = `${pendingEqualizationList.length} referencias`;
+            document.getElementById('previewUnits').innerText = `${totalAdjustmentUnits} unidades ajustadas`;
+
+            summaryBox.classList.remove('hidden');
+            tableContainer.classList.remove('hidden');
+            btnApply.disabled = pendingEqualizationList.length === 0;
+        }
+
+        function executeRuleEqualization() {
+            const thresholdStr = document.getElementById('ruleThresholdInput').value;
+            const threshold = parseFloat(thresholdStr);
+
+            if (pendingEqualizationList.length === 0) return;
+
+            const ruleLabel = `Regla < $${threshold.toFixed(2)}`;
+            let updatedCount = 0;
+
+            pendingEqualizationList.forEach(item => {
+                const prevQty = item.qtyReal;
+                item.qtyReal = item.qtyOnHand;
+                item.ajuste = 0;
+                item.origen = ruleLabel;
+                item.fechaHora = new Date().toLocaleString();
+                
+                addAuditRecord(item, ruleLabel, prevQty);
+                updatedCount++;
+            });
+
+            saveToLocalStorage();
+            filterTable();
+            toggleRuleModal();
+            playSound('success');
+
+            alert(`✅ ¡Proceso completado! Se igualaron ${updatedCount} referencias por debajo de $${threshold.toFixed(2)} con el origen "${ruleLabel}".`);
+        }
+
+        // CARGA CSV / TXT Y PERSISTENCIA
+        function handleCSVImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                parseInventoryText(e.target.result);
+                event.target.value = '';
+            };
+            reader.readAsText(file, 'utf-8');
+        }
+
+        function parseInventoryText(text) {
+            const lines = text.split('\n');
+            inventoryData = [];
+            for (let line of lines) {
+                let cleanLine = line.replace(/\r/g, '').trim();
+                if (!cleanLine || cleanLine.includes('---') || cleanLine.includes('Page:') || cleanLine.includes('OCD Item') || cleanLine.startsWith('Total') || cleanLine.includes('WHS') || cleanLine.includes('Continued')) continue;
+                if (cleanLine.startsWith('"') && cleanLine.endsWith('"')) cleanLine = cleanLine.substring(1, cleanLine.length - 1);
+                
+                let tokens = cleanLine.split(/\s+/);
+                if (tokens.length >= 7) {
+                    let tCost = tokens[tokens.length - 1].replace(/,/g, '');
+                    let cUnit = tokens[tokens.length - 2].replace(/,/g, '');
+                    let qPO = tokens[tokens.length - 3].replace(/,/g, '');
+                    let qAlloc = tokens[tokens.length - 4].replace(/,/g, '');
+                    let qHand = tokens[tokens.length - 5].replace(/,/g, '');
+                    
+                    let whs = tokens[0];
+                    let grp = tokens[1];
+                    let item = tokens[2];
+                    let description = tokens.slice(3, tokens.length - 5).join(' ');
+
+                    let qtyOnHand = parseFloat(qHand) || 0;
+                    inventoryData.push({
+                        whs, grp, item, description, ubicacion: '',
+                        qtyOnHand: qtyOnHand, qtyReal: 0, ajuste: -qtyOnHand,
+                        qtyAlloc: parseFloat(qAlloc) || 0, qtyOnPO: parseFloat(qPO) || 0,
+                        costUnit: parseFloat(cUnit) || 0, totalCost: parseFloat(tCost) || (qtyOnHand * (parseFloat(cUnit) || 0)),
+                        observaciones: '', lastShipment: emailShipments[item] || 'No disponible',
+                        origen: 'Pendiente', fechaHora: '-', history: []
+                    });
+                }
+            }
+            if (inventoryData.length > 0) document.getElementById('headerStockFE').value = inventoryData[0].whs;
+            resetFilters();
+            playSound('success');
+            alert(`¡Importación exitosa! Se cargaron ${inventoryData.length} referencias.`);
+        }
+
+        // IMPORTACIÓN Y FORMATEO DE FECHAS EN FICHEROS .MSG (DD/MM/AAAA)
+        function handleMSGFilesImport(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+            emailShipments = {};
+            let processed = 0;
+            let successfullyParsed = 0;
+
+            for (let file of files) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const buffer = e.target.result;
+                    const bytes = new Uint8Array(buffer);
+                    let textClean = "";
+                    for (let i = 0; i < bytes.length; i++) {
+                        if (bytes[i] >= 32 && bytes[i] <= 126) textClean += String.fromCharCode(bytes[i]);
+                        else if (bytes[i] === 10 || bytes[i] === 13) textClean += " ";
+                    }
+
+                    let detectedDateStr = null;
+                    const dateRegex = /\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})\b/;
+                    const matchDate = textClean.match(dateRegex);
+
+                    if (matchDate) {
+                        let p1 = parseInt(matchDate[1], 10);
+                        let p2 = parseInt(matchDate[2], 10);
+                        let p3 = matchDate[3];
+                        if (p3.length === 2) p3 = '20' + p3;
+
+                        let day, month, year = p3;
+
+                        if (p1 > 12) {
+                            day = String(p1).padStart(2, '0');
+                            month = String(p2).padStart(2, '0');
+                        } else {
+                            month = String(p1).padStart(2, '0');
+                            day = String(p2).padStart(2, '0');
+                        }
+                        detectedDateStr = `${day}/${month}/${year}`;
+                    } else {
+                        let d = new Date(file.lastModified);
+                        let day = String(d.getDate()).padStart(2, '0');
+                        let month = String(d.getMonth() + 1).padStart(2, '0');
+                        let year = d.getFullYear();
+                        detectedDateStr = `${day}/${month}/${year}`;
+                    }
+
+                    let foundInFile = false;
+                    inventoryData.forEach(row => {
+                        if (row.item && row.item.length >= 4 && textClean.includes(row.item)) {
+                            emailShipments[row.item] = detectedDateStr;
+                            foundInFile = true;
+                        }
+                    });
+
+                    if (foundInFile) successfullyParsed++;
+                    processed++;
+
+                    if (processed === files.length) {
+                        event.target.value = '';
+                        updateShipmentsInTable();
+                        playSound('success');
+                        alert(`¡Se han procesado correctamente ${successfullyParsed} de ${files.length} ficheros .msg con formato DD/MM/AAAA!`);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        function updateShipmentsInTable() {
+            inventoryData.forEach(row => { if (emailShipments[row.item]) row.lastShipment = emailShipments[row.item]; });
+            saveToLocalStorage();
+            filterTable();
+        }
+
+        function handleSearchKey(event) {
+            if (event.key === 'Enter') {
+                applyQuickAssignment();
+            }
+        }
+
+        function applyQuickAssignment() {
+            const searchVal = document.getElementById('superSearch').value.trim();
+            if (!searchVal) return;
+
+            const ubic = document.getElementById('persistentUbicacion').value.trim();
+            const qtyRealInput = document.getElementById('quickQtyReal').value.trim();
+
+            const match = findInventoryMatch(searchVal);
+            if (match) {
+                playSound('success');
+                const prevQty = match.qtyReal;
+                if (ubic !== '') match.ubicacion = ubic;
+                if (qtyRealInput !== '') {
+                    match.qtyReal = parseFloat(qtyRealInput) || 0;
+                    match.ajuste = match.qtyReal - match.qtyOnHand;
+                } else if (match.origen === 'Pendiente') {
+                    match.qtyReal = match.qtyOnHand;
+                    match.ajuste = 0;
+                }
+                match.origen = match.origen === 'Pendiente' ? 'Manual' : match.origen;
+                match.fechaHora = new Date().toLocaleString();
+
+                addAuditRecord(match, 'Manual (Superbuscador)', prevQty);
+                saveToLocalStorage();
+                filterTable();
+                showFeedback();
+
+                document.getElementById('superSearch').value = '';
+                document.getElementById('quickQtyReal').value = '';
+                document.getElementById('superSearch').focus();
+            } else {
+                playSound('error');
+                alert(`No se encontró ninguna referencia en el inventario para: "${searchVal}"`);
+                document.getElementById('superSearch').value = '';
+                document.getElementById('superSearch').focus();
+            }
+        }
+
+        function showFeedback() {
+            const fb = document.getElementById('assignFeedback');
+            if (!fb) return;
+            fb.classList.remove('hidden');
+            setTimeout(() => fb.classList.add('hidden'), 2000);
+        }
+
+        function renderTable(dataToRender = inventoryData) {
+            const tbody = document.getElementById('inventoryTableBody');
+            tbody.innerHTML = '';
+            const t = translations[currentLang] || translations['es'];
+            
+            if (dataToRender.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="17" class="text-center py-8 text-slate-400 dark:text-slate-500"><i class="fa-solid fa-file-csv text-3xl mb-2 block"></i> ${t.emptyTable}</td></tr>`;
+                document.getElementById('recordCount').innerText = `${t.recordCount}0`;
+                updateKPIs();
+                return;
+            }
+
+            dataToRender.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 dark:hover:bg-slate-800/60 transition border-b border-slate-100 dark:border-slate-800 cursor-pointer";
+
+                const statusIcon = row.origen === 'Pendiente' 
+                    ? '<i class="fa-solid fa-clock text-amber-500 text-xs" title="Pendiente"></i>' 
+                    : row.ajuste === 0 
+                        ? '<i class="fa-solid fa-circle-check text-emerald-600 dark:text-emerald-400 text-sm" title="Coincide"></i>' 
+                        : '<i class="fa-solid fa-circle-xmark text-rose-600 dark:text-rose-400 text-sm" title="Descuadre"></i>';
+
+                const ajusteText = row.origen === 'Pendiente' ? -row.qtyOnHand : row.ajuste;
+                const ajusteClass = row.ajuste < 0 ? 'text-rose-600 dark:text-rose-400' : row.ajuste > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400';
+
+                tr.innerHTML = `
+                    <td class="p-2 text-center" onclick="openAuditModal('${row.item}')">${statusIcon}</td>
+                    <td data-col-idx="0" onclick="openAuditModal('${row.item}')" class="col-cell-0 p-2 font-medium">${row.whs}</td>
+                    <td data-col-idx="1" onclick="openAuditModal('${row.item}')" class="col-cell-1 p-2 text-slate-600 dark:text-slate-300 font-bold">${row.grp}</td>
+                    <td data-col-idx="2" onclick="openAuditModal('${row.item}')" class="col-cell-2 p-2 font-bold text-quidel-navy dark:text-quidel-accent">${row.item}</td>
+                    <td data-col-idx="3" onclick="openAuditModal('${row.item}')" class="col-cell-3 p-2 text-slate-800 dark:text-slate-100 font-semibold">${row.description}</td>
+                    <td data-col-idx="4" class="col-cell-4 p-2 bg-amber-50/40 dark:bg-amber-950/20 font-bold text-amber-900 dark:text-amber-200">
+                        <input type="text" value="${row.ubicacion || ''}" oninput="updateUbicacion('${row.item}', this.value)" class="w-24 px-1.5 py-1 bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700 rounded text-xs font-bold text-amber-900 dark:text-amber-200 uppercase">
+                    </td>
+                    <td data-col-idx="5" onclick="openAuditModal('${row.item}')" class="col-cell-5 p-2 text-center font-semibold">${row.qtyOnHand}</td>
+                    <td data-col-idx="6" class="col-cell-6 p-2 bg-red-50/40 dark:bg-red-950/20 text-center">
+                        <input type="number" value="${row.origen === 'Pendiente' ? '' : row.qtyReal}" placeholder="-" oninput="updateRealQty(this, '${row.item}')" class="w-16 px-1.5 py-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded text-xs font-bold text-center text-slate-800 dark:text-slate-100">
+                    </td>
+                    <td data-col-idx="7" onclick="openAuditModal('${row.item}')" class="col-cell-7 p-2 text-center font-bold ajuste-cell ${ajusteClass}">${ajusteText}</td>
+                    <td data-col-idx="8" onclick="openAuditModal('${row.item}')" class="col-cell-8 p-2 text-center">${row.qtyAlloc}</td>
+                    <td data-col-idx="9" onclick="openAuditModal('${row.item}')" class="col-cell-9 p-2 text-center">${row.qtyOnPO}</td>
+                    <td data-col-idx="10" onclick="openAuditModal('${row.item}')" class="col-cell-10 p-2 text-right">$${row.costUnit.toFixed(2)}</td>
+                    <td data-col-idx="11" onclick="openAuditModal('${row.item}')" class="col-cell-11 p-2 text-right font-medium">$${row.totalCost.toFixed(2)}</td>
+                    <td data-col-idx="12" class="col-cell-12 p-2"><input type="text" value="${row.observaciones || ''}" oninput="updateObs('${row.item}', this.value)" class="w-28 px-1.5 py-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded text-xs text-slate-800 dark:text-slate-100"></td>
+                    <td data-col-idx="13" onclick="openAuditModal('${row.item}')" class="col-cell-13 p-2 text-center font-medium ${row.lastShipment === 'No disponible' ? 'text-slate-400 italic' : 'text-blue-600 dark:text-blue-400 font-bold'}">${row.lastShipment}</td>
+                    <td data-col-idx="14" onclick="openAuditModal('${row.item}')" class="col-cell-14 p-2 text-center origen-cell"><span class="bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded text-[10px]">${row.origen}</span></td>
+                    <td data-col-idx="15" onclick="openAuditModal('${row.item}')" class="col-cell-15 p-2 text-center text-slate-500 dark:text-slate-400 text-[11px] font-mono time-cell">${row.fechaHora}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            document.getElementById('recordCount').innerText = `${t.recordCount}${dataToRender.length}`;
+            updateKPIs();
+            applyColumnVisibilityToDOM();
+        }
+
+        function updateUbicacion(itemCode, val) {
+            const row = inventoryData.find(i => i.item === itemCode);
+            if (row) { row.ubicacion = val; saveToLocalStorage(); }
+        }
+
+        function updateRealQty(inputEl, itemCode) {
+            const valStr = inputEl.value.trim();
+            const row = inventoryData.find(i => i.item === itemCode);
+            if (row) {
+                const prevQty = row.qtyReal;
+                if (valStr === '') {
+                    row.qtyReal = 0;
+                    row.ajuste = -row.qtyOnHand;
+                    row.origen = 'Pendiente';
+                    row.fechaHora = '-';
+                } else {
+                    const qty = parseFloat(valStr) || 0;
+                    row.qtyReal = qty;
+                    row.ajuste = qty - row.qtyOnHand;
+                    const activeUbic = document.getElementById('persistentUbicacion').value.trim();
+                    if (activeUbic !== '') row.ubicacion = activeUbic;
+                    row.fechaHora = new Date().toLocaleString();
+                    if (row.origen === 'Pendiente') row.origen = 'Manual';
+                    addAuditRecord(row, 'Manual (Tabla)', prevQty);
+                }
+
+                const tr = inputEl.closest('tr');
+                if (tr) {
+                    const ajCell = tr.querySelector('.ajuste-cell');
+                    if (ajCell) {
+                        ajCell.innerText = row.origen === 'Pendiente' ? -row.qtyOnHand : row.ajuste;
+                        ajCell.classList.remove('text-rose-600', 'text-emerald-600', 'text-slate-600', 'dark:text-rose-400', 'dark:text-emerald-400', 'dark:text-slate-400');
+                        ajCell.classList.add(row.ajuste < 0 ? 'text-rose-600' : row.ajuste > 0 ? 'text-emerald-600' : 'text-slate-600');
+                    }
+                    const stCell = tr.firstElementChild;
+                    if (stCell) {
+                        stCell.innerHTML = row.origen === 'Pendiente'
+                            ? '<i class="fa-solid fa-clock text-amber-500 text-xs" title="Pendiente"></i>'
+                            : row.ajuste === 0
+                                ? '<i class="fa-solid fa-circle-check text-emerald-600 dark:text-emerald-400 text-sm" title="Coincide"></i>'
+                                : '<i class="fa-solid fa-circle-xmark text-rose-600 dark:text-rose-400 text-sm" title="Descuadre"></i>';
+                    }
+                    const orCell = tr.querySelector('.origen-cell span');
+                    if (orCell) orCell.innerText = row.origen;
+                    const tmCell = tr.querySelector('.time-cell');
+                    if (tmCell) tmCell.innerText = row.fechaHora;
+                }
+            }
+            saveToLocalStorage();
+            updateKPIs();
+        }
+
+        function updateObs(itemCode, val) {
+            const row = inventoryData.find(i => i.item === itemCode);
+            if (row) { row.observaciones = val; saveToLocalStorage(); }
+        }
+
+        function addAuditRecord(row, origen, prevQty) {
+            if (!row.history) row.history = [];
+            row.history.push({
+                fechaHora: new Date().toLocaleString(),
+                origen: origen,
+                qtyReal: row.qtyReal,
+                ubicacion: row.ubicacion,
+                prevQty: prevQty
+            });
+        }
+
+        function filterTable() {
+            const query = document.getElementById('superSearch').value.toLowerCase().trim();
+            const colInputs = document.querySelectorAll('thead tr:nth-child(2) input');
+            let colFilters = {};
+            colInputs.forEach(inp => {
+                const colName = inp.getAttribute('data-col');
+                if (colName && inp.value.trim() !== '') colFilters[colName] = inp.value.toLowerCase().trim();
+            });
+
+            const ajusteSelectVal = document.getElementById('filterAjusteSelect').value;
+
+            const filtered = inventoryData.filter(row => {
+                if (currentStatusFilter === 'ok' && (row.origen === 'Pendiente' || row.ajuste !== 0)) return false;
+                if (currentStatusFilter === 'diff' && (row.origen === 'Pendiente' || row.ajuste === 0)) return false;
+                if (currentStatusFilter === 'pending' && row.origen !== 'Pendiente') return false;
+
+                if (query) {
+                    const itemMatch = String(row.item || '').toLowerCase().includes(query);
+                    const descMatch = String(row.description || '').toLowerCase().includes(query);
+                    const ubicMatch = String(row.ubicacion || '').toLowerCase().includes(query);
+                    if (!itemMatch && !descMatch && !ubicMatch) return false;
+                }
+
+                for (let col in colFilters) {
+                    const cellVal = String(row[col] || '').toLowerCase();
+                    if (!cellVal.includes(colFilters[col])) return false;
+                }
+
+                if (ajusteSelectVal) {
+                    const adj = row.origen === 'Pendiente' ? -row.qtyOnHand : row.ajuste;
+                    if (ajusteSelectVal === 'nonzero' && adj === 0) return false;
+                    if (ajusteSelectVal === 'zero' && adj !== 0) return false;
+                    if (ajusteSelectVal === 'positive' && adj <= 0) return false;
+                    if (ajusteSelectVal === 'negative' && adj >= 0) return false;
+                }
+
+                return true;
+            });
+
+            renderTable(filtered);
+        }
+
+        function resetFilters() {
+            document.getElementById('superSearch').value = '';
+            document.getElementById('quickQtyReal').value = '';
+            document.getElementById('filterAjusteSelect').value = '';
+            currentStatusFilter = null;
+            document.querySelectorAll('thead tr:nth-child(2) input').forEach(inp => inp.value = '');
+            filterTable();
+        }
+
+        function sortTable(col) {
+            inventoryData.sort((a, b) => (a[col] > b[col] ? 1 : -1));
+            filterTable();
+        }
+
+        function updateKPIs() {
+            let totalOnHand = 0, totalCostOnHand = 0;
+            let totalReal = 0, totalAjusteQty = 0;
+            let totalCostAjuste = 0;
+            let cntOk = 0, cntDiff = 0, cntPending = 0;
+
+            inventoryData.forEach(r => {
+                const onHand = parseFloat(r.qtyOnHand) || 0;
+                const cost = parseFloat(r.costUnit) || 0;
+                const tCost = parseFloat(r.totalCost) || (onHand * cost);
+
+                totalOnHand += onHand;
+                totalCostOnHand += tCost;
+
+                if (r.origen === 'Pendiente') {
+                    cntPending++;
+                    totalAjusteQty += (-onHand);
+                    totalCostAjuste += (onHand * cost);
+                    cntDiff++;
+                    return;
+                }
+
+                const real = parseFloat(r.qtyReal) || 0;
+                const adj = real - onHand;
+
+                totalReal += real;
+                totalAjusteQty += adj;
+                totalCostAjuste += (adj * cost);
+
+                if (adj === 0) cntOk++;
+                else cntDiff++;
+            });
+
+            const totalRefs = inventoryData.length;
+            const accuracy = totalRefs > 0 ? ((cntOk / totalRefs) * 100).toFixed(1) : '0.0';
+            const money = v => '$' + parseFloat(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const devPct = totalCostOnHand > 0 ? ((totalCostAjuste / totalCostOnHand) * 100).toFixed(2) : '0.00';
+
+            document.getElementById('kpiQtyOnHand').innerText = totalOnHand;
+            document.getElementById('kpiQtyReal').innerText = totalReal;
+            document.getElementById('kpiAjusteQty').innerText = totalAjusteQty;
+            document.getElementById('kpiAccuracy').innerText = accuracy + '%';
+            document.getElementById('kpiTotalCost').innerText = money(totalCostOnHand);
+            document.getElementById('kpiCostAjuste').innerText = money(totalCostAjuste) + ` (${devPct}%)`;
+
+            document.getElementById('cntStatusOk').innerText = cntOk;
+            document.getElementById('cntStatusDiff').innerText = cntDiff;
+            document.getElementById('cntStatusPending').innerText = cntPending;
+        }
+
+        function filterByStatus(type) {
+            if (currentStatusFilter === type) {
+                currentStatusFilter = null;
+            } else {
+                currentStatusFilter = type;
+            }
+            filterTable();
+        }
+
+        async function saveToLocalStorage() {
+            const header = {
+                stockFE: document.getElementById('headerStockFE').value,
+                nombreFE: document.getElementById('headerNombreFE').value,
+                nombreFSS: document.getElementById('headerNombreFSS').value,
+                fecha: document.getElementById('headerFecha').value,
+                persistentUbicacion: document.getElementById('persistentUbicacion').value
+            };
+            const payload = JSON.stringify({ header, data: inventoryData, favLocations }, null, 2);
+            localStorage.setItem('quidelortho_inventory', payload);
+            updateKPIs();
+
+            if (autoSyncDirHandle) {
+                try {
+                    const stockFE = header.stockFE || 'EESG';
+                    const fileHandle = await autoSyncDirHandle.getFileHandle(`inventario_db_${stockFE}.json`, { create: true });
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(payload);
+                    await writable.close();
+                } catch(err) { console.error("Error al escribir JSON automático:", err); }
+            }
+        }
+
+        async function selectAutoSyncDirectory() {
+            if ('showDirectoryPicker' in window) {
+                try {
+                    autoSyncDirHandle = await window.showDirectoryPicker();
+                    document.getElementById('syncFolderStatus').innerText = "Sincronizado: " + autoSyncDirHandle.name;
+                    document.getElementById('btnAutoSyncFolder').className = "bg-emerald-600 text-white border border-emerald-700 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1 shadow";
+                    saveToLocalStorage();
+                    playSound('success');
+                    alert(`¡Carpeta "${autoSyncDirHandle.name}" vinculada con éxito!`);
+                } catch(err) { if (err.name !== 'AbortError') alert("No se pudo acceder a la carpeta."); }
+            } else {
+                downloadDatabase();
+            }
+        }
+
+        async function confirmResetAllData() {
+            if (inventoryData.length === 0 && !document.getElementById('headerStockFE').value) {
+                alert("El inventario ya está vacío.");
+                return;
+            }
+            if (!confirm("⚠️ ATENCIÓN: Vas a reiniciar y eliminar todos los datos del inventario actual. ¿Deseas continuar?")) return;
+            inventoryData = [];
+            localStorage.removeItem('quidelortho_inventory');
+            resetFilters();
+            alert("Inventario reiniciado con éxito.");
+        }
+
+        function copySummaryToClipboard() {
+            const m = getSummaryMetrics();
+            const text = `📌 *Resumen Inventario QuidelOrtho*\n- Stock FE: ${document.getElementById('headerStockFE').value || 'N/A'}\n- FE: ${document.getElementById('headerNombreFE').value || 'N/A'}\n- Qty On Hand: ${m.totalOnHand}\n- Qty Real: ${m.totalReal}\n- Ajuste Unidades: ${m.ajusteQty}\n- Precisión Stock: ${m.accuracy}%\n- Coste Desviado: $${m.totalCostAjuste} (${m.devPct}%)`;
+            navigator.clipboard.writeText(text).then(() => {
+                playSound('success');
+                alert("¡Resumen copiado al portapapeles listo para pegar en Teams o Email!");
+            });
+        }
+
+        function getSummaryMetrics() {
+            let totalOnHand = 0, totalCostOnHand = 0;
+            let totalReal = 0, totalAjusteQty = 0;
+            let totalCostAjuste = 0;
+            let cntOk = 0;
+
+            inventoryData.forEach(r => {
+                const onHand = parseFloat(r.qtyOnHand) || 0;
+                const cost = parseFloat(r.costUnit) || 0;
+                const tCost = parseFloat(r.totalCost) || (onHand * cost);
+
+                totalOnHand += onHand;
+                totalCostOnHand += tCost;
+
+                if (r.origen === 'Pendiente') {
+                    totalAjusteQty += (-onHand);
+                    totalCostAjuste += (onHand * cost);
+                    return;
+                }
+
+                const real = parseFloat(r.qtyReal) || 0;
+                const adj = real - onHand;
+
+                totalReal += real;
+                totalAjusteQty += adj;
+                totalCostAjuste += (adj * cost);
+
+                if (adj === 0) cntOk++;
+            });
+
+            const totalRefs = inventoryData.length;
+            const accuracy = totalRefs > 0 ? ((cntOk / totalRefs) * 100).toFixed(1) : '0.0';
+
+            return {
+                totalOnHand,
+                totalReal,
+                ajusteQty: totalAjusteQty,
+                accuracy,
+                totalCostOnHand: totalCostOnHand.toFixed(2),
+                totalCostAjuste: totalCostAjuste.toFixed(2),
+                devPct: totalCostOnHand > 0 ? ((totalCostAjuste / totalCostOnHand) * 100).toFixed(2) : '0.00'
+            };
+        }
+
+        function downloadDatabase() {
+            saveToLocalStorage();
+            const payload = localStorage.getItem('quidelortho_inventory') || '{}';
+            const blob = new Blob([payload], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `inventario_db_${document.getElementById('headerStockFE').value || 'FE'}.json`;
+            a.click();
+        }
+
+        function loadDatabaseFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    inventoryData = (parsed.data || []).map(item => ({
+                        ...item,
+                        qtyOnHand: parseFloat(item.qtyOnHand) || 0,
+                        qtyReal: parseFloat(item.qtyReal) || 0,
+                        ajuste: item.origen === 'Pendiente' ? - (parseFloat(item.qtyOnHand) || 0) : (parseFloat(item.ajuste) || 0),
+                        costUnit: parseFloat(item.costUnit) || 0,
+                        totalCost: parseFloat(item.totalCost) || 0
+                    }));
+                    if (parsed.favLocations && Array.isArray(parsed.favLocations)) {
+                        favLocations = parsed.favLocations;
+                    }
+                    renderFavLocations();
+                    if (parsed.header) {
+                        document.getElementById('headerStockFE').value = parsed.header.stockFE || '';
+                        document.getElementById('headerNombreFE').value = parsed.header.nombreFE || '';
+                        document.getElementById('headerNombreFSS').value = parsed.header.nombreFSS || '';
+                        document.getElementById('headerFecha').value = parsed.header.fecha || '';
+                        if (parsed.header.persistentUbicacion !== undefined) {
+                            document.getElementById('persistentUbicacion').value = parsed.header.persistentUbicacion;
+                        }
+                    }
+                    saveToLocalStorage();
+                    filterTable();
+                    playSound('success');
+                    alert('Base de datos cargada con éxito.');
+                } catch(err) { alert('Error al leer el archivo JSON.'); }
+            };
+            reader.readAsText(file);
+        }
+
+        // ----------------------------------------------------
+        // EXPORTACIÓN A EXCEL MULTILINGÜE Y COMPLETA
+        // ----------------------------------------------------
+        function exportToExcel() {
+            const langTexts = {
+                es: { summary: "RESUMEN DE DESVIACIÓN DE INVENTARIO", closing: "--- CIERRE Y VALIDACIÓN TÉCNICA ---", stock: "Stock FE", tech: "Técnico FE", fss: "Técnico FSS/FSM", date: "Fecha del Conteo", totalReg: "Total Registros", ok: "✅ OK", desc: "⚠️ ¡DESCUADRE / PENDIENTE!", qOnHand: "Qty On Hand", qReal: "Qty Real", adjUnits: "Ajuste Unidades", accuracy: "Precisión Stock", totCost: "Total Cost On Hand", costDev: "Coste Desviado", sign: "Firma y Fecha:" },
+                en: { summary: "INVENTORY VARIANCE SUMMARY", closing: "--- CLOSING AND TECHNICAL VALIDATION ---", stock: "FE Stock", tech: "FE Technician", fss: "FSS/FSM Technician", date: "Count Date", totalReg: "Total Records", ok: "✅ OK", desc: "⚠️ ¡VARIANCE / PENDING!", qOnHand: "Qty On Hand", qReal: "Qty Real", adjUnits: "Units Adjustment", accuracy: "Stock Accuracy", totCost: "Total Cost On Hand", costDev: "Variance Cost", sign: "Signature & Date:" },
+                pt: { summary: "RESUMO DE DESVIO DE INVENTÁRIO", closing: "--- FECHAMENTO E VALIDAÇÃO TÉCNICA ---", stock: "Stock FE", tech: "Técnico FE", fss: "Técnico FSS/FSM", date: "Data da Contagem", totalReg: "Total de Registros", ok: "✅ OK", desc: "⚠️ ¡DIVERGÊNCIA / PENDENTE!", qOnHand: "Qty On Hand", qReal: "Qty Real", adjUnits: "Ajuste de Unidades", accuracy: "Precisão do Estoque", totCost: "Custo Total On Hand", costDev: "Custo Desviado", sign: "Assinatura e Data:" },
+                de: { summary: "INVENTURABWEICHUNGSÜBERSICHT", closing: "--- ABSCHLUSS UND TECHNISCHE VALIDIERUNG ---", stock: "FE Lager", tech: "FE Techniker", fss: "FSS/FSM Techniker", date: "Zählungsdatum", totalReg: "Gesamtdatensätze", ok: "✅ OK", desc: "⚠️ ¡ABWEICHUNG / AUSSTEHEND!", qOnHand: "Qty On Hand", qReal: "Qty Real", adjUnits: "Einheitenanpassung", accuracy: "Bestandsgenauigkeit", totCost: "Gesamtkosten On Hand", costDev: "Abweichungskosten", sign: "Unterschrift & Datum:" },
+                nl: { summary: "VOORRAADAFWIJKING OVERZICHT", closing: "--- AFSLUITING EN TECHNISCHE VALIDATIE ---", stock: "FE Voorraad", tech: "FE Technicus", fss: "FSS/FSM Technicus", date: "Telling Datum", totalReg: "Totaal Records", ok: "✅ OK", desc: "⚠️ ¡AFWIJKING / IN AFWACHTING!", qOnHand: "Qty On Hand", qReal: "Qty Real", adjUnits: "Eenheden Aanpassing", accuracy: "Voorraad Nauwkeurigheid", totCost: "Totale Kosten On Hand", costDev: "Afwijkingskosten", sign: "Handtekening & Datum:" },
+                it: { summary: "RIEPILOGO VARIAZIONE INVENTARIO", closing: "--- CHIUSURA E VALIDAZIONE TECNICA ---", stock: "Stock FE", tech: "Tecnico FE", fss: "Tecnico FSS/FSM", date: "Data Conteggio", totalReg: "Record Totali", ok: "✅ OK", desc: "⚠️ ¡VARIAZIONE / SOSPESO!", qOnHand: "Qty On Hand", qReal: "Qty Real", adjUnits: "Adeguamento Unità", accuracy: "Accuratezza Stock", totCost: "Costo Totale On Hand", costDev: "Costo Variazione", sign: "Firma e Data:" }
+            };
+            const t = langTexts[currentLang] || langTexts['es'];
+
+            let totalOnHand = 0, totalReal = 0, totalCostOnHand = 0, totalCostDev = 0, matchingCount = 0;
+
+            inventoryData.forEach(r => {
+                const oh = Number(r.qtyOnHand) || 0;
+                const costU = Number(r.costUnit) || 0;
+                totalOnHand += oh;
+                totalCostOnHand += oh * costU;
+
+                if (r.origen === 'Pendiente') {
+                    totalCostDev += (oh * costU);
+                } else {
+                    const real = Number(r.qtyReal) || 0;
+                    const diff = real - oh;
+                    totalReal += real;
+                    totalCostDev += (diff * costU);
+                    if (diff === 0) matchingCount++;
+                }
+            });
+
+            const ajusteUnidades = totalReal - totalOnHand;
+            const stockAccuracy = inventoryData.length > 0 ? ((matchingCount / inventoryData.length) * 100).toFixed(1) + '%' : '0.0%';
+            const costDevPercent = totalCostOnHand > 0 ? ((totalCostDev / totalCostOnHand) * 100).toFixed(2) + '%' : '0.00%';
+
+            const wsData = inventoryData.map(r => {
+                const isPendiente = r.origen === 'Pendiente';
+                const real = isPendiente ? 0 : r.qtyReal;
+                const ajuste = isPendiente ? -r.qtyOnHand : (r.qtyReal - r.qtyOnHand);
+                return {
+                    'ESTADO': isPendiente || ajuste !== 0 ? t.desc : t.ok,
+                    'WHS': r.whs, 'Grp': r.grp, 'Item': r.item, 'Description': r.description,
+                    'Ubicación': r.ubicacion || '', 'Qty On Hand': r.qtyOnHand, 'Qty Real': isPendiente ? 'Pendiente' : real, 
+                    'Ajuste': ajuste, 'Cost/Unit ($)': r.costUnit, 'Total Cost ($)': r.totalCost, 
+                    'Observaciones': r.observaciones, 'Origen': r.origen
+                };
+            });
+
+            wsData.push({});
+            wsData.push({ 'ESTADO': t.summary });
+            wsData.push({ 'ESTADO': t.qOnHand, 'WHS': t.qReal, 'Grp': t.adjUnits, 'Item': t.accuracy, 'Description': t.totCost, 'Ubicación': t.costDev });
+            wsData.push({ 'ESTADO': totalOnHand, 'WHS': totalReal, 'Grp': ajusteUnidades, 'Item': stockAccuracy, 'Description': '$' + totalCostOnHand.toFixed(2), 'Ubicación': `$${totalCostDev.toFixed(2)} (${costDevPercent})` });
+
+            wsData.push({});
+            wsData.push({});
+            wsData.push({ 'ESTADO': t.closing });
+            wsData.push({ 'ESTADO': t.stock + ':', 'WHS': document.getElementById('headerStockFE').value || 'N/A' });
+            wsData.push({ 'ESTADO': t.date + ':', 'WHS': document.getElementById('headerFecha').value || 'N/A' });
+            wsData.push({});
+            wsData.push({ 'ESTADO': `${t.tech}: ${document.getElementById('headerNombreFE').value || 'Pablo'}`, 'Description': `${t.fss}: ${document.getElementById('headerNombreFSS').value || 'Tomás Bote'}` });
+            wsData.push({ 'ESTADO': t.sign, 'Description': t.sign });
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(wsData);
+            ws['!cols'] = [{wch: 18}, {wch: 8}, {wch: 8}, {wch: 14}, {wch: 35}, {wch: 15}, {wch: 12}, {wch: 12}, {wch: 10}, {wch: 14}, {wch: 14}, {wch: 25}, {wch: 15}];
+            XLSX.utils.book_append_sheet(wb, ws, "Inventory & Variance");
+            XLSX.writeFile(wb, `Inventario_${document.getElementById('headerStockFE').value || 'FE'}.xlsx`);
+        }
+
+        // ----------------------------------------------------
+        // EXPORTACIÓN A PDF MULTILINGÜE Y COMPLETA
+        // ----------------------------------------------------
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('landscape', 'mm', 'a4');
+
+            const langTexts = {
+                es: { title: "QUIDELORTHO - REVISIÓN DE INVENTARIO Y DESVIACIONES", closing: "--- RESUMEN DE CIERRE Y VALIDACIÓN TÉCNICA ---", stock: "Stock FE", tech: "Técnico FE", fss: "Técnico FSS/FSM", date: "Fecha del Conteo", totalReg: "Total Registros", sign: "Firma y Fecha:", summary: "RESUMEN DE DESVIACIÓN DE INVENTARIO", qOnHand: "Qty On Hand", qReal: "Qty Real", adjUnits: "Ajuste Unidades", accuracy: "Precisión Stock", totCost: "Total Cost On Hand", costDev: "Coste Desviado" },
+                en: { title: "QUIDELORTHO - INVENTORY & VARIANCE REVIEW", closing: "--- CLOSING AND TECHNICAL VALIDATION SUMMARY ---", stock: "FE Stock", tech: "FE Technician", fss: "FSS/FSM Technician", date: "Count Date", totalReg: "Total Records", sign: "Signature & Date:", summary: "INVENTORY VARIANCE SUMMARY", qOnHand: "Qty On Hand", qReal: "Qty Real", adjUnits: "Units Adjustment", accuracy: "Stock Accuracy", totCost: "Total Cost On Hand", costDev: "Variance Cost" },
+                pt: { title: "QUIDELORTHO - REVISÃO DE INVENTÁRIO E DESVIOS", closing: "--- RESUMO DE FECHAMENTO E VALIDAÇÃO TÉCNICA ---", stock: "Stock FE", tech: "Técnico FE", fss: "Técnico FSS/FSM", date: "Data da Contagem", totalReg: "Total de Registros", sign: "Assinatura e Data:", summary: "RESUMO DE DESVIO DE INVENTÁRIO", qOnHand: "Qty On Hand", qReal: "Qty Real", adjUnits: "Ajuste de Unidades", accuracy: "Precisão do Estoque", totCost: "Custo Total On Hand", costDev: "Custo Desviado" },
+                de: { title: "QUIDELORTHO - INVENTUR- UND ABWEICHUNGSPRÜFUNG", closing: "--- ABSCHLUSS- UND TECHNISCHE VALIDIERUNGSÜBERSICHT ---", stock: "FE Lager", tech: "FE Techniker", fss: "FSS/FSM Techniker", date: "Zählungsdatum", totalReg: "Gesamtdatensätze", sign: "Unterschrift & Datum:", summary: "INVENTURABWEICHUNGSÜBERSICHT", qOnHand: "Qty On Hand", qReal: "Qty Real", adjUnits: "Einheitenanpassung", accuracy: "Bestandsgenauigkeit", totCost: "Gesamtkosten On Hand", costDev: "Abweichungskosten" },
+                nl: { title: "QUIDELORTHO - VOORRAAD- EN AFWIJKINGSOVERZICHT", closing: "--- OVERZICHT AFSLUITING EN TECHNISCHE VALIDATIE ---", stock: "FE Voorraad", tech: "FE Technicus", fss: "FSS/FSM Technicus", date: "Telling Datum", totalReg: "Totaal Records", sign: "Handtekening & Datum:", summary: "VOORRAADAFWIJKING OVERZICHT", qOnHand: "Qty On Hand", qReal: "Qty Real", adjUnits: "Eenheden Aanpassing", accuracy: "Voorraad Nauwkeurigheid", totCost: "Totale Kosten On Hand", costDev: "Afwijkingskosten" },
+                it: { title: "QUIDELORTHO - REVISIONE INVENTARIO E VARIAZIONI", closing: "--- RIEPILOGO CHIUSURA E VALIDAZIONE TECNICA ---", stock: "Stock FE", tech: "Tecnico FE", fss: "Tecnico FSS/FSM", date: "Data Conteggio", totalReg: "Record Totali", sign: "Firma e Data:", summary: "RIEPILOGO VARIAZIONE INVENTARIO", qOnHand: "Qty On Hand", qReal: "Qty Real", adjUnits: "Adeguamento Unità", accuracy: "Accuratezza Stock", totCost: "Costo Totale On Hand", costDev: "Costo Variazione" }
+            };
+            const t = langTexts[currentLang] || langTexts['es'];
+
+            doc.setFontSize(14);
+            doc.text(t.title, 14, 12);
+
+            let totalOnHand = 0, totalReal = 0, totalCostOnHand = 0, totalCostDev = 0, matchingCount = 0;
+            inventoryData.forEach(r => {
+                const oh = Number(r.qtyOnHand) || 0;
+                const costU = Number(r.costUnit) || 0;
+                totalOnHand += oh;
+                totalCostOnHand += oh * costU;
+
+                if (r.origen === 'Pendiente') {
+                    totalCostDev += (oh * costU);
+                } else {
+                    const real = Number(r.qtyReal) || 0;
+                    const diff = real - oh;
+                    totalReal += real;
+                    totalCostDev += (diff * costU);
+                    if (diff === 0) matchingCount++;
+                }
+            });
+
+            const ajusteUnidades = totalReal - totalOnHand;
+            const stockAccuracy = inventoryData.length > 0 ? ((matchingCount / inventoryData.length) * 100).toFixed(1) + '%' : '0.0%';
+            const costDevPercent = totalCostOnHand > 0 ? ((totalCostDev / totalCostOnHand) * 100).toFixed(2) + '%' : '0.00%';
+
+            const bodyData = inventoryData.map(r => {
+                const isPendiente = r.origen === 'Pendiente';
+                const real = isPendiente ? 0 : r.qtyReal;
+                const ajuste = isPendiente ? -r.qtyOnHand : (r.qtyReal - r.qtyOnHand);
+                return {
+                    whs: r.whs, grp: r.grp, item: r.item, description: r.description,
+                    ubicacion: r.ubicacion || '', onHand: r.qtyOnHand, real: isPendiente ? 'Pend.' : real, ajuste: ajuste,
+                    cost: '$' + (Number(r.costUnit) || 0).toFixed(2),
+                    total: '$' + (Number(r.totalCost) || 0).toFixed(2),
+                    obs: r.observaciones || '', isDescuadre: isPendiente || ajuste !== 0
+                };
+            });
+
+            doc.autoTable({
+                head: [["WHS", "Grp", "Item", "Description", "Location", "On Hand", "Real", "Variance", "Cost/Unit", "Total Cost", "Observations"]],
+                body: bodyData.map(r => [r.whs, r.grp, r.item, r.description, r.ubicacion, r.onHand, r.real, r.ajuste, r.cost, r.total, r.obs]),
+                startY: 20,
+                styles: { fontSize: 8, cellPadding: 2 },
+                headStyles: { fillColor: [10, 37, 64] },
+                didParseCell: function (data) {
+                    if (data.section === 'body') {
+                        const rowInfo = bodyData[data.row.index];
+                        if (rowInfo && rowInfo.isDescuadre) {
+                            if (data.column.index === 7) {
+                                data.cell.styles.textColor = [185, 28, 28];
+                                data.cell.styles.fontStyle = 'bold';
+                            }
+                            data.cell.styles.fillColor = [254, 242, 242];
+                        }
+                    }
+                }
+            });
+
+            let currentY = doc.lastAutoTable.finalY + 10;
+
+            doc.setFontSize(10);
+            doc.text(t.summary, 14, currentY);
+
+            doc.autoTable({
+                head: [[t.qOnHand, t.qReal, t.adjUnits, t.accuracy, t.totCost, t.costDev]],
+                body: [[totalOnHand, totalReal, ajusteUnidades, stockAccuracy, '$' + totalCostOnHand.toFixed(2), `$${totalCostDev.toFixed(2)} (${costDevPercent})`]],
+                startY: currentY + 4,
+                styles: { fontSize: 8, cellPadding: 2 },
+                headStyles: { fillColor: [10, 37, 64] }
+            });
+
+            currentY = doc.lastAutoTable.finalY + 10;
+
+            doc.setFontSize(10);
+            doc.text(t.closing, 14, currentY);
+
+            doc.setFontSize(8);
+            const stockFE = document.getElementById('headerStockFE').value || 'N/A';
+            const tecnicoFE = document.getElementById('headerNombreFE').value || 'Pablo';
+            const tecnicoFSS = document.getElementById('headerNombreFSS').value || 'Tomás Bote';
+            const fechaConteo = document.getElementById('headerFecha').value || new Date().toISOString().split('T')[0];
+
+            doc.text(`${t.stock}: ${stockFE}`, 14, currentY + 6);
+            doc.text(`${t.tech}: ${tecnicoFE}`, 14, currentY + 11);
+            doc.text(`${t.fss}: ${tecnicoFSS}`, 14, currentY + 16);
+            doc.text(`${t.date}: ${fechaConteo}`, 14, currentY + 21);
+
+            doc.rect(14, currentY + 26, 120, 18);
+            doc.text(`${t.tech}: ${tecnicoFE}`, 17, currentY + 32);
+            doc.text(t.sign, 17, currentY + 40);
+
+            doc.rect(140, currentY + 26, 120, 18);
+            doc.text(`${t.fss}: ${tecnicoFSS}`, 143, currentY + 32);
+            doc.text(t.sign, 143, currentY + 40);
+
+            doc.save(`Inventario_${stockFE}.pdf`);
+        }
+    </script>
+</body>
+</html>
